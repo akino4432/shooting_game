@@ -3,8 +3,11 @@ enchant();
 const playerSize = 51;
 const playerCollisionDetection = 8;
 const screenSize = {'x': 700, 'y': 700};
-const defaultPosition = {'x': Math.floor(screenSize.x/2 - playerSize/2),
-                       'y': Math.floor(screenSize.y - playerSize - 60)};
+const playScreenSize = {'x': 500, 'y': 660};
+const fourCoordinates = {'x1': 20, 'x2': 520, 'y1': 20, 'y2': 680};
+const centerX = playScreenSize.x/2 + fourCoordinates.x1;
+const defaultPosition = {'x': Math.floor(centerX - playerSize/2),
+                         'y': fourCoordinates.y2 - playerSize - 60};
 
 window.onload = function() {
   const core = new Core(screenSize.x, screenSize.y);
@@ -12,7 +15,7 @@ window.onload = function() {
   core.rootScene.backgroundColor = 'black';
   core.keybind(88, "a");
   core.keybind(90, "b");
-  core.preload('bullet1.png','boss_vermiena.png');
+  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -80,10 +83,10 @@ window.onload = function() {
                   up = playerSpeed
                   down = playerSpeed;
               //端での移動処理
-              if ((this.x-left) <= 0) left = this.x;
-              if ((this.x+playerSize+right) >= screenSize.x) right = screenSize.x-(this.x+playerSize);
-              if ((this.y-up) <= 0) up = this.y;
-              if ((this.y+playerSize+down) >= screenSize.y) down = screenSize.y-(this.y+playerSize);
+              if ((this.x-left) <= fourCoordinates.x1) left = this.x-fourCoordinates.x1;
+              if ((this.x+playerSize+right) >= fourCoordinates.x2) right = fourCoordinates.x2-(this.x+playerSize);
+              if ((this.y-up) <= fourCoordinates.y1) up = this.y-fourCoordinates.y1;
+              if ((this.y+playerSize+down) >= fourCoordinates.y2) down = fourCoordinates.y2-(this.y+playerSize);
 
               if (movePermission) {
                 if (core.input.left) this.x -= left;
@@ -112,7 +115,7 @@ window.onload = function() {
               if (collision) {
                 collision = false;
                 death++;
-                lifeLabel.text = playerLife - death;
+                lifeLabel.text = 'LIFE: '+ (playerLife - death);
                 startAge = this.age;
                 movePermission = false;
                 this.x = defaultPosition.x;
@@ -134,7 +137,7 @@ window.onload = function() {
 
         const bullet = new Sprite(32, 32);
         bullet.image = core.assets['bullet1.png'];
-        bullet.x = (screenSize.x-32)/2;
+        bullet.x = centerX-bullet.width/2;
         bullet.y = 16;
         this.frame = 0;
         bullet.on('enterframe', function() {
@@ -148,7 +151,12 @@ window.onload = function() {
         });
         bulletGroup.addChild(bullet);
 
-       const lifeLabel = new templateLabel(playerLife, 560, 5);
+        const playscreen = new Sprite(700, 700);
+        playscreen.image = core.assets['playscreen.png'];
+
+        this.addChild(playscreen);
+
+       const lifeLabel = new templateLabel('LIFE: '+playerLife, 560, 40);
         this.addChild(lifeLabel);
 
         this.on('enterframe', function() {
@@ -197,7 +205,7 @@ window.onload = function() {
         this.font = size + " Arial";
         this.color = 'white';
       }
-    })
+    });
 
     //関数
     function removeScene(scene){
