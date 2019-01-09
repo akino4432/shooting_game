@@ -1,21 +1,16 @@
 enchant();
 
-const playerSize = 51;
-const playerCollisionDetection = 8;
 const screenSize = {'x': 700, 'y': 700};
-const playScreenSize = {'x': 500, 'y': 660};
-const fourCoordinates = {'x1': 20, 'x2': 520, 'y1': 20, 'y2': 680};
-const centerX = playScreenSize.x/2 + fourCoordinates.x1;
-const defaultPosition = {'x': Math.floor(centerX - playerSize/2),
-                         'y': fourCoordinates.y2 - playerSize - 60};
 
 window.onload = function() {
   const core = new Core(screenSize.x, screenSize.y);
   core.fps = 30;
   core.rootScene.backgroundColor = 'black';
-  core.keybind(88, "a");
-  core.keybind(90, "b");
-  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png');
+  core.keybind(88, "x");
+  core.keybind(90, "y");
+  core.keybind(81, "q");
+  core.keybind(32, "space");
+  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -24,25 +19,27 @@ window.onload = function() {
         this.backgroundColor = 'black';
         const startLabel =  new templateLabel('START', 200, 200, '40px');
         const pressLabel = new templateLabel(
-          'Press x to start.', 150, 300
+          'Press SPACE to start.', 150, 300
         );
 
         this.addChild(startLabel);
         this.addChild(pressLabel);
 
-        let preA = true;  //押した瞬間を検知
+        let pre = true;  //押した瞬間を検知
+
+        core.replaceScene(this);
+        // GameStartSceneのループ処理
         this.on('enterframe', function() {
-          if (core.input.a) {
-            if (!preA) {
+          if (core.input.space) {
+            if (!pre) {
               removeScene(this);
               let gamePlayScene = new GamePlayScene();
             }
-            preA = true;
+            pre = true;
           } else{
-            preA = false;
+            pre = false;
           }
         });
-        core.replaceScene(this);
       }
     });
 
@@ -50,6 +47,23 @@ window.onload = function() {
       initialize: function() {
         Scene.call(this);
         this.backgroundColor = 'black';
+        const playerSize = 51;
+        const playersPlace = {'x': -100, 'y': 100}
+        const shotSize = {'x': 20, 'y': 60};
+        const shotSum = 10; // ショットの個数
+        const shotSpeed = 30;
+        const playerCollisionDetection = 8; //自機の当たり判定
+        const deathTime = 0.3; //秒
+        const invincibleTime = 2; //秒
+        const playScreenSize = {'x': 500, 'y': 660};
+        const fourCoordinates = {'x1': 20, 'x2': 520, 'y1': 20, 'y2': 680};
+        const centerX = playScreenSize.x/2 + fourCoordinates.x1;
+        const defaultPosition = {'x': Math.floor(centerX - playerSize/2),
+                                 'y': fourCoordinates.y2 - playerSize - 60};
+
+        let playerLife = 5;
+        let death = 0;
+        let collision = false;
 
         const Player = Class.create(Sprite, {
           initialize: function(scene) {
@@ -60,12 +74,91 @@ window.onload = function() {
             this.frame = 12;
             let startAge = this.age;  //無敵時間用
             let movePermission = true;  //移動有効/無効
+            let shotPermission = true;
             let playerSpeed = 8;
+            let shotNum = -1; //ショットのグループ番号
 
+
+            const ShotGroup = Class.create(Group, {
+              initialize: function(gNum, player, scene) {
+                Group.call(this);
+                const shot1 = new Shot(this, gNum, -20, player);
+                const shot2 = new Shot(this, gNum, 20, player);
+
+                scene.addChild(this);
+              }
+            })
+
+            const Shot = Class.create(Sprite, {
+              initialize: function(group, gNum, pos, player) {
+                Sprite.call(this, 20, 60);
+                this.image = core.assets['shot1.png'];
+                this.x = playersPlace.x;
+                this.y = playersPlace.y;
+                this.speed = 0;
+                this.gNum = gNum;
+                this.pos = pos; //相対的な位置
+                group.addChild(this);
+                this.on('enterframe', function() {
+                  if ((shotNum === this.gNum)&&(this.speed === 0)) {
+                    this.x = player.x + (playerSize-shotSize.x)/2 + this.pos;
+                    this.y = player.y - 20; //ショットが出る位置。20は適当
+                    this.speed = shotSpeed;
+                  };
+                  if (this.y <= -shotSize.y) {
+                    this.x = playersPlace.x;
+                    this.y = playersPlace.y;
+                    this.speed = 0;
+                  };
+                  this.y -= this.speed
+                });
+              }
+            });
+
+            // ショットのグループをループで作成
+            let shotGroup = [];
+            for(var i = 0; i < shotSum; i++){
+              shotGroup[i] = new ShotGroup(i, this, scene);
+            }
+
+            scene.addChild(this);
+            // プレイヤーのループ処理
             this.on('enterframe', function () {
               this.frame = [12,12,12,12,13,13,13,13,14,14,14,14,15,15,15,15];
+              //被弾処理ここから
+              //死亡時間経過後の処理
+              if (((this.age - startAge) / core.fps >= deathTime)&&
+                 (this.x === playersPlace.x)){
+                if ((playerLife - death) <= 0) { //GAMEOVER判定
+                  removeScene(scene);
+                  let gameOverScene = new GameOverScene();
+                }
+                this.x = defaultPosition.x;
+                this.y = defaultPosition.y; //画面外の自機を戻す
+                movePermission = true;
+                shotPermission = true;
+              };
+              // 無敵時間の処理
+              if ((this.age - startAge) / core.fps <= invincibleTime) {
+                collision = false;
+                this.opacity = ((Math.floor(this.age/2) % 2) === 1) ? 1 : 0;
+              } else {
+                this.opacity =1;
+              };
+              //被弾処理
+              if (collision) {
+                collision = false;
+                death++;
+                lifeLabel.text = 'LIFE: '+ (playerLife - death);
+                startAge = this.age;
+                movePermission = false;
+                shotPermission = false;
+                this.x = playersPlace.x;  //画面外へ
+                this.y = playersPlace.y;
+              };
+              //被弾処理ここまで
               //  移動処理ここから
-              if (core.input.b) {  //低速移動
+              if (core.input.y) {  //低速移動
                 playerSpeed = 4;
               } else {
                 playerSpeed = 8;
@@ -96,41 +189,17 @@ window.onload = function() {
               }
               //  移動処理ここまで
 
-              //被弾処理
-              if (((this.age - startAge) / core.fps >= 0.2)&& //0.2秒隔離
-                 (this.y === defaultPosition.y + 1000)){
-                if ((playerLife - death) <= 0) { //GAMEOVER判定
-                  removeScene(scene);
-                  let gameOverScene = new GameOverScene();
-                }
-                this.y = defaultPosition.y;
-                movePermission = true;  //画面外の自機を戻す
-              };
-              if ((this.age - startAge) / core.fps <= 2) { //無敵時間2秒
-                collision = false;
-                this.opacity = ((Math.floor(this.age/2) % 2) === 1) ? 1 : 0;
+              //ショット処理
+              if ((core.input.x)&&(shotPermission)) {
+                shotNum = Math.floor(this.age/4) % shotSum;
               } else {
-                this.opacity =1;
-              };
-              if (collision) {
-                collision = false;
-                death++;
-                lifeLabel.text = 'LIFE: '+ (playerLife - death);
-                startAge = this.age;
-                movePermission = false;
-                this.x = defaultPosition.x;
-                this.y = defaultPosition.y + 1000;
-              };
+                shotNum = -1;
+              }
             });
-
-            scene.addChild(this);
           }
         });
 
         const player = new Player(this);
-        let playerLife = 3;
-        let death = 0;
-        let collision = false;
 
         let bulletGroup = new Group();
         this.addChild(bulletGroup);
@@ -151,6 +220,7 @@ window.onload = function() {
         });
         bulletGroup.addChild(bullet);
 
+        // 外枠
         const playscreen = new Sprite(700, 700);
         playscreen.image = core.assets['playscreen.png'];
 
@@ -159,10 +229,15 @@ window.onload = function() {
        const lifeLabel = new templateLabel('LIFE: '+playerLife, 560, 40);
         this.addChild(lifeLabel);
 
-        this.on('enterframe', function() {
-
-        });
         core.replaceScene(this);
+        // GamePlaySceneのループ処理
+        this.on('enterframe', function() {
+          // ゲームをやめる
+          if (core.input.q) {
+            removeScene(this);
+            let gameStartScene = new GameStartScene();
+          }
+        });
       }
     });
 
@@ -172,26 +247,27 @@ window.onload = function() {
         this.backgroundColor = 'black';
         const gameOverLabel =  new templateLabel('GAME OVER', 200, 200, '40px');
         const pressLabel = new templateLabel(
-          'Press x to back to menu.', 150, 300
+          'Press SPACE to back to menu.', 150, 300
         );
 
         this.addChild(gameOverLabel);
         this.addChild(pressLabel);
 
-        let preA = true;  //押した瞬間を検知
+        let pre = true;  //押した瞬間を検知
+
+        core.replaceScene(this);
+        // GameOverSceneのループ処理
         this.on('enterframe', function() {
-          if (core.input.a) {
-            if (!preA) {
+          if (core.input.space) {
+            if (!pre) {
               removeScene(this);
               let gamePlayScene = new GameStartScene();
             }
-            preA = true;
+            pre = true;
           } else{
-            preA = false;
+            pre = false;
           }
         });
-
-        core.replaceScene(this);
       }
     });
 
