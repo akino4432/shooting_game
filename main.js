@@ -2,7 +2,7 @@ enchant();
 
 const playerSize = 51;
 const playerCollisionDetection = 8;
-const screenSize = {'x': 600, 'y': 600};
+const screenSize = {'x': 700, 'y': 700};
 const defaultPosition = {'x': Math.floor(screenSize.x/2 - playerSize/2),
                        'y': Math.floor(screenSize.y - playerSize - 60)};
 
@@ -93,6 +93,7 @@ window.onload = function() {
               }
               //  移動処理ここまで
 
+              //被弾処理
               if (((this.age - startAge) / core.fps >= 0.2)&& //0.2秒隔離
                  (this.y === defaultPosition.y + 1000)){
                 if ((playerLife - death) <= 0) { //GAMEOVER判定
