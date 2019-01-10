@@ -10,8 +10,8 @@ window.onload = function() {
   core.keybind(90, "y");
   core.keybind(81, "q");
   core.keybind(32, "space");
-  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'chara1.png',
-               'putting_scissors.mp3', 'attack3.mp3');
+  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'snake.png',
+               'putting_scissors.mp3', 'attack3.mp3', 'hidan.wav');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -54,8 +54,8 @@ window.onload = function() {
         const shotSum = 10; // ショットの個数
         const shotSpeed = 30;
         const playerCollisionDetection = 8; //自機の当たり判定
-        const deathTime = 0.3; //秒
-        const enemySize = 32;
+        const deathTime = 0.4; //秒
+        const enemySize = 50;
         const enemyPlace = {'x': 800, 'y': -100};
         const invincibleTime = 2; //秒
         const playScreenSize = {'x': 500, 'y': 660};
@@ -73,7 +73,7 @@ window.onload = function() {
         const Enemy = Class.create(Sprite, {
           initialize: function(scene) {
             Sprite.call(this, enemySize, enemySize);
-            this.image = core.assets['chara1.png'];
+            this.image = core.assets['snake.png'];
             this.x = enemyDefaultPosition.x;
             this.y = enemyDefaultPosition.y;
             this.life = enemyLife;
@@ -101,6 +101,7 @@ window.onload = function() {
             this.x = defaultPosition.x;
             this.y = defaultPosition.y;
             this.life = playerLife;
+            this.deathSe = core.assets['hidan.wav'].clone();
             this.frame = 12;
             let startAge = this.age;  //無敵時間用
             let movePermission = true;  //移動有効/無効
@@ -192,6 +193,7 @@ window.onload = function() {
               //被弾処理
               if (collision) {
                 collision = false;
+                this.deathSe.play();
                 this.life--;
                 lifeLabel.text = 'LIFE: '+ this.life;
                 startAge = this.age;
@@ -235,7 +237,7 @@ window.onload = function() {
 
               //ショット処理
               if ((core.input.x)&&(shotPermission)) {
-                shotNum = Math.floor(this.age/4) % shotSum;
+                shotNum = this.age/3 % shotSum;
               } else {
                 shotNum = -1;
               }
