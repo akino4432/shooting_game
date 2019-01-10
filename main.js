@@ -10,7 +10,7 @@ window.onload = function() {
   core.keybind(90, "y");
   core.keybind(81, "q");
   core.keybind(32, "space");
-  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png');
+  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'chara1.png');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -48,22 +48,46 @@ window.onload = function() {
         Scene.call(this);
         this.backgroundColor = 'black';
         const playerSize = 51;
-        const playersPlace = {'x': -100, 'y': 100}
+        const playersPlace = {'x': -100, 'y': -100};
         const shotSize = {'x': 20, 'y': 60};
         const shotSum = 10; // ショットの個数
         const shotSpeed = 30;
         const playerCollisionDetection = 8; //自機の当たり判定
         const deathTime = 0.3; //秒
+        const enemySize = 32;
+        const enemyPlace = {'x': 800, 'y': -100};
         const invincibleTime = 2; //秒
         const playScreenSize = {'x': 500, 'y': 660};
         const fourCoordinates = {'x1': 20, 'x2': 520, 'y1': 20, 'y2': 680};
         const centerX = playScreenSize.x/2 + fourCoordinates.x1;
         const defaultPosition = {'x': Math.floor(centerX - playerSize/2),
                                  'y': fourCoordinates.y2 - playerSize - 60};
+        const enemyDefaultPosition = {'x': Math.floor(centerX - enemySize/2),
+                                      'y': fourCoordinates.y1 + 60};
 
-        let playerLife = 5;
-        let death = 0;
+        const playerLife = 5;
+        const enemyLife = 100;
         let collision = false;
+
+        const Enemy = Class.create(Sprite, {
+          initialize: function(scene) {
+            Sprite.call(this, enemySize, enemySize);
+            this.image = core.assets['chara1.png'];
+            this.x = enemyDefaultPosition.x;
+            this.y = enemyDefaultPosition.y;
+            this.life = enemyLife;
+            this.frame = 0;
+            scene.addChild(this);
+            this.on('enterframe', function() {
+              // 撃破処理
+              if (this.life <= 0){
+                this.x = enemyPlace.x;
+                this.y = enemyPlace.y;
+              }
+              this.frame = Math.floor(this.age/4) % 3;
+            });
+          }
+        });
 
         const Player = Class.create(Sprite, {
           initialize: function(scene) {
@@ -71,6 +95,7 @@ window.onload = function() {
             this.image = core.assets['boss_vermiena.png'];
             this.x = defaultPosition.x;
             this.y = defaultPosition.y;
+            this.life = playerLife;
             this.frame = 12;
             let startAge = this.age;  //無敵時間用
             let movePermission = true;  //移動有効/無効
@@ -100,11 +125,20 @@ window.onload = function() {
                 this.pos = pos; //相対的な位置
                 group.addChild(this);
                 this.on('enterframe', function() {
+                  // 命中処理
+                  if (this.intersect(enemy)){
+                    this.x = playersPlace.x;
+                    this.y = playersPlace.y;
+                    this.speed = 0;
+                    enemy.life--;
+                  }
+                  // 待機中かつボタン入力でショット
                   if ((shotNum === this.gNum)&&(this.speed === 0)) {
                     this.x = player.x + (playerSize-shotSize.x)/2 + this.pos;
                     this.y = player.y - 20; //ショットが出る位置。20は適当
                     this.speed = shotSpeed;
                   };
+                  // 画面外待機
                   if (this.y <= -shotSize.y) {
                     this.x = playersPlace.x;
                     this.y = playersPlace.y;
@@ -124,12 +158,12 @@ window.onload = function() {
             scene.addChild(this);
             // プレイヤーのループ処理
             this.on('enterframe', function () {
-              this.frame = [12,12,12,12,13,13,13,13,14,14,14,14,15,15,15,15];
+              this.frame = Math.floor(this.age/4) % 4 + 12;
               //被弾処理ここから
               //死亡時間経過後の処理
               if (((this.age - startAge) / core.fps >= deathTime)&&
                  (this.x === playersPlace.x)){
-                if ((playerLife - death) <= 0) { //GAMEOVER判定
+                if ((this.life) <= 0) { //GAMEOVER判定
                   removeScene(scene);
                   let gameOverScene = new GameOverScene();
                 }
@@ -148,8 +182,8 @@ window.onload = function() {
               //被弾処理
               if (collision) {
                 collision = false;
-                death++;
-                lifeLabel.text = 'LIFE: '+ (playerLife - death);
+                this.life--;
+                lifeLabel.text = 'LIFE: '+ this.life;
                 startAge = this.age;
                 movePermission = false;
                 shotPermission = false;
@@ -199,6 +233,8 @@ window.onload = function() {
           }
         });
 
+        const enemy = new Enemy(this);
+
         const player = new Player(this);
 
         let bulletGroup = new Group();
@@ -226,7 +262,7 @@ window.onload = function() {
 
         this.addChild(playscreen);
 
-       const lifeLabel = new templateLabel('LIFE: '+playerLife, 560, 40);
+       const lifeLabel = new templateLabel('LIFE: '+player.life, 560, 40);
         this.addChild(lifeLabel);
 
         core.replaceScene(this);
