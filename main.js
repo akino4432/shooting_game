@@ -11,7 +11,7 @@ window.onload = function() {
   core.keybind(81, "q");
   core.keybind(32, "space");
   core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'chara1.png',
-               'putting_scissors.mp3');
+               'putting_scissors.mp3', 'attack3.mp3');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -77,13 +77,17 @@ window.onload = function() {
             this.x = enemyDefaultPosition.x;
             this.y = enemyDefaultPosition.y;
             this.life = enemyLife;
+            this.death = 0;
             this.frame = 0;
+            this.deathSe = core.assets['attack3.mp3'].clone();
             scene.addChild(this);
             this.on('enterframe', function() {
               // 撃破処理
-              if (this.life <= 0){
+              if ((this.life <= 0)&&(this.death === 0)){
+                this.deathSe.play()
                 this.x = enemyPlace.x;
                 this.y = enemyPlace.y;
+                this.death = scene.age;
               }
               this.frame = Math.floor(this.age/4) % 3;
             });
@@ -142,7 +146,7 @@ window.onload = function() {
                     this.speed = shotSpeed;
                     if (se){
                       this.shotSe.play();
-                    }                    
+                    }
                   };
                   // 画面外待機
                   if (this.y <= -shotSize.y) {
@@ -274,10 +278,52 @@ window.onload = function() {
         core.replaceScene(this);
         // GamePlaySceneのループ処理
         this.on('enterframe', function() {
+          // クリア判定
+          if (enemy.death){
+            if ((this.age - enemy.death) / core.fps >= 3){
+              removeScene(this);
+              let gameClearScene = new GameClearScene();
+            }
+          }
+
           // ゲームをやめる
           if (core.input.q) {
             removeScene(this);
             let gameStartScene = new GameStartScene();
+          }
+        });
+      }
+    });
+
+    const GameClearScene = Class.create(Scene, {
+      initialize: function(){
+        Scene.call(this);
+        this.backgroundColor = 'black';
+        const gameClearLabel =  new templateLabel('Clear!', 200, 200, '40px');
+        const thanksLabel = new templateLabel(
+          'Thank you for playing!', 150, 300
+        );
+        const pressLabel = new templateLabel(
+          'Press SPACE to back to menu.', 150, 400
+        );
+
+        this.addChild(gameClearLabel);
+        this.addChild(thanksLabel);
+        this.addChild(pressLabel);
+
+        let pre = true;  //押した瞬間を検知
+
+        core.replaceScene(this);
+        // GameClearSceneのループ処理
+        this.on('enterframe', function() {
+          if (core.input.space) {
+            if (!pre) {
+              removeScene(this);
+              let gameStartScene = new GameStartScene();
+            }
+            pre = true;
+          } else{
+            pre = false;
           }
         });
       }
@@ -303,7 +349,7 @@ window.onload = function() {
           if (core.input.space) {
             if (!pre) {
               removeScene(this);
-              let gamePlayScene = new GameStartScene();
+              let gameStartScene = new GameStartScene();
             }
             pre = true;
           } else{
