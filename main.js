@@ -10,7 +10,8 @@ window.onload = function() {
   core.keybind(90, "y");
   core.keybind(81, "q");
   core.keybind(32, "space");
-  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'chara1.png');
+  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'chara1.png',
+               'putting_scissors.mp3');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -107,15 +108,15 @@ window.onload = function() {
             const ShotGroup = Class.create(Group, {
               initialize: function(gNum, player, scene) {
                 Group.call(this);
-                const shot1 = new Shot(this, gNum, -20, player);
-                const shot2 = new Shot(this, gNum, 20, player);
+                const shot1 = new Shot(this, gNum, -20, player, true);
+                const shot2 = new Shot(this, gNum, 20, player, false);
 
                 scene.addChild(this);
               }
             })
 
             const Shot = Class.create(Sprite, {
-              initialize: function(group, gNum, pos, player) {
+              initialize: function(group, gNum, pos, player, se) {
                 Sprite.call(this, 20, 60);
                 this.image = core.assets['shot1.png'];
                 this.x = playersPlace.x;
@@ -123,6 +124,8 @@ window.onload = function() {
                 this.speed = 0;
                 this.gNum = gNum;
                 this.pos = pos; //相対的な位置
+                this.shotSe = core.assets['putting_scissors.mp3'].clone();
+                this.se = se;
                 group.addChild(this);
                 this.on('enterframe', function() {
                   // 命中処理
@@ -137,6 +140,9 @@ window.onload = function() {
                     this.x = player.x + (playerSize-shotSize.x)/2 + this.pos;
                     this.y = player.y - 20; //ショットが出る位置。20は適当
                     this.speed = shotSpeed;
+                    if (se){
+                      this.shotSe.play();
+                    }                    
                   };
                   // 画面外待機
                   if (this.y <= -shotSize.y) {
