@@ -11,16 +11,16 @@ window.onload = function() {
   core.keybind(81, "q");
   core.keybind(32, "space");
   core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'snake.png',
-               'putting_scissors.mp3', 'attack3.mp3', 'hidan.wav');
+               'putting_scissors.mp3', 'attack3.mp3', 'hidan.wav', 'star.png');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
       initialize: function(){
         Scene.call(this);
         this.backgroundColor = 'black';
-        const startLabel =  new templateLabel('START', 200, 200, '40px');
+        const startLabel =  new templateLabel('START', 285, 250, '40px');
         const pressLabel = new templateLabel(
-          'Press SPACE to start.', 150, 300
+          'Press SPACE to start.', 255, 400
         );
 
         this.addChild(startLabel);
@@ -50,7 +50,7 @@ window.onload = function() {
         const playerSize = 51;
         const playersPlace = {'x': -100, 'y': -100};
         const shotSize = {'x': 20, 'y': 60};
-        const shotSum = 10; // ショットの個数
+        const shotSum = 10; // ショットグループの個数
         const shotSpeed = 30;
         const playerCollisionDetection = 8; //自機の当たり判定
         const deathTime = 0.4; //秒
@@ -65,17 +65,17 @@ window.onload = function() {
         const enemyDefaultPosition = {'x': Math.floor(centerX - enemySize/2),
                                       'y': fourCoordinates.y1 + 60};
 
-        const playerLife = 5;
-        const enemyLife = 100;
+        const playerLife = 3;
+        const enemyLife = 300;
         let collision = false;
 
         const PauseScene = Class.create(Scene, {
           initialize: function(scene) {
             Scene.call(this)
             this.backgroundColor = 'rgba(255, 255, 255, 0.2)'
-            const pauseLabel = new templateLabel('PAUSE', 300, 300, '30px');
+            const pauseLabel = new templateLabel('PAUSE', 280, 280, '30px');
             const restartLabel = new templateLabel(
-              'Press SPACE to restart.', 240, 400);
+              'Press SPACE to restart.', 230, 380);
             this.addChild(pauseLabel);
             this.addChild(restartLabel);
             this.on('enterframe', function(){
@@ -98,7 +98,7 @@ window.onload = function() {
             this.x = enemyDefaultPosition.x;
             this.y = enemyDefaultPosition.y;
             this.life = enemyLife;
-            this.death = 0;
+            this.death = 0; //撃破時のframe記録用
             this.frame = 0;
             this.deathSe = core.assets['attack3.mp3'].clone();
             scene.addChild(this);
@@ -111,6 +111,11 @@ window.onload = function() {
                 this.death = scene.age;
               }
               this.frame = Math.floor(this.age/4) % 3;
+
+              //当たり判定
+              if (this.within(player, playerCollisionDetection+20)){
+                collision = true;
+              }
             });
           }
         });
@@ -160,6 +165,7 @@ window.onload = function() {
                     this.y = playersPlace.y;
                     this.speed = 0;
                     enemy.life--;
+                    if (enemy.life <= 0) enemy.life = 0;
                   }
                   // 待機中かつボタン入力でショット
                   if ((shotNum === this.gNum)&&(this.speed === 0)) {
@@ -216,7 +222,7 @@ window.onload = function() {
                 collision = false;
                 this.deathSe.play();
                 this.life--;
-                lifeLabel.text = 'LIFE: '+ this.life;
+                lifeStar.width = 31 * this.life;
                 startAge = this.age;
                 movePermission = false;
                 shotPermission = false;
@@ -295,8 +301,20 @@ window.onload = function() {
 
         this.addChild(playscreen);
 
-       const lifeLabel = new templateLabel('LIFE: '+player.life, 560, 40);
+        const lifeBar = new Sprite(460, 5);
+        lifeBar.backgroundColor = 'white'
+        lifeBar.x = 40;
+        lifeBar.y = 40;
+        this.addChild(lifeBar);
+
+        const lifeLabel = new templateLabel('Player:', 540, 40);
         this.addChild(lifeLabel);
+
+        const lifeStar = new Sprite(31*playerLife, 31);
+        lifeStar.image = core.assets['star.png'];
+        lifeStar.x = 560;
+        lifeStar.y = 70;
+        this.addChild(lifeStar);
 
         //ポーズシーン作成
         const pauseScene = new PauseScene();
@@ -327,6 +345,12 @@ window.onload = function() {
             removeAllChild(this);
             let gameStartScene = new GameStartScene();
           }
+
+          // 敵のHPバー
+          lifeBar.width = 460 * enemy.life/enemyLife;
+          if (enemy.life/enemyLife <= 0.2){
+            lifeBar.backgroundColor = 'yellow';
+          }
         });
       }
     });
@@ -335,13 +359,14 @@ window.onload = function() {
       initialize: function(){
         Scene.call(this);
         this.backgroundColor = 'black';
-        const gameClearLabel =  new templateLabel('Clear!', 200, 200, '40px');
+        const gameClearLabel =  new templateLabel('Game Clear!', 215, 280, '50px');
         const thanksLabel = new templateLabel(
-          'Thank you for playing!', 150, 300
+          'Thank you for playing!', 260, 390
         );
         const pressLabel = new templateLabel(
-          'Press SPACE to back to menu.', 150, 400
+          'Press SPACE to back to the menu.', 205, 500
         );
+        pressLabel.width = 500;
 
         this.addChild(gameClearLabel);
         this.addChild(thanksLabel);
@@ -368,10 +393,11 @@ window.onload = function() {
       initialize: function(){
         Scene.call(this);
         this.backgroundColor = 'black';
-        const gameOverLabel =  new templateLabel('GAME OVER', 200, 200, '40px');
+        const gameOverLabel =  new templateLabel('GAME OVER', 235, 280, '40px');
         const pressLabel = new templateLabel(
-          'Press SPACE to back to menu.', 150, 300
+          'Press SPACE to back to the menu.', 205, 500
         );
+        pressLabel.width = 500;
 
         this.addChild(gameOverLabel);
         this.addChild(pressLabel);
