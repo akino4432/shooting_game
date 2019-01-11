@@ -33,10 +33,9 @@ window.onload = function() {
         this.on('enterframe', function() {
           if (core.input.space) {
             if (!pre) {
-              removeScene(this);
+              removeAllChild(this);
               let gamePlayScene = new GamePlayScene();
             }
-            pre = true;
           } else{
             pre = false;
           }
@@ -69,6 +68,28 @@ window.onload = function() {
         const playerLife = 5;
         const enemyLife = 100;
         let collision = false;
+
+        const PauseScene = Class.create(Scene, {
+          initialize: function(scene) {
+            Scene.call(this)
+            this.backgroundColor = 'rgba(255, 255, 255, 0.2)'
+            const pauseLabel = new templateLabel('PAUSE', 300, 300, '30px');
+            const restartLabel = new templateLabel(
+              'Press SPACE to restart.', 240, 400);
+            this.addChild(pauseLabel);
+            this.addChild(restartLabel);
+            this.on('enterframe', function(){
+              if (core.input.space){
+                if (!pre){
+                  pre = true
+                  core.popScene();
+                }
+              } else{
+                pre = false;
+              }
+            });
+          }
+        });
 
         const Enemy = Class.create(Sprite, {
           initialize: function(scene) {
@@ -175,7 +196,7 @@ window.onload = function() {
               if (((this.age - startAge) / core.fps >= deathTime)&&
                  (this.x === playersPlace.x)){
                 if ((this.life) <= 0) { //GAMEOVER判定
-                  removeScene(scene);
+                  removeAllChild(scene);
                   let gameOverScene = new GameOverScene();
                 }
                 this.x = defaultPosition.x;
@@ -277,20 +298,33 @@ window.onload = function() {
        const lifeLabel = new templateLabel('LIFE: '+player.life, 560, 40);
         this.addChild(lifeLabel);
 
+        //ポーズシーン作成
+        const pauseScene = new PauseScene();
+
         core.replaceScene(this);
         // GamePlaySceneのループ処理
+        let pre = true;
         this.on('enterframe', function() {
           // クリア判定
           if (enemy.death){
             if ((this.age - enemy.death) / core.fps >= 3){
-              removeScene(this);
+              removeAllChild(this);
               let gameClearScene = new GameClearScene();
             }
+          }
+          //ポーズ
+          if (core.input.space){
+            if (!pre){
+              pre = true;
+              core.pushScene(pauseScene);
+            }
+          } else{
+            pre = false;
           }
 
           // ゲームをやめる
           if (core.input.q) {
-            removeScene(this);
+            removeAllChild(this);
             let gameStartScene = new GameStartScene();
           }
         });
@@ -320,10 +354,9 @@ window.onload = function() {
         this.on('enterframe', function() {
           if (core.input.space) {
             if (!pre) {
-              removeScene(this);
+              removeAllChild(this);
               let gameStartScene = new GameStartScene();
             }
-            pre = true;
           } else{
             pre = false;
           }
@@ -350,10 +383,9 @@ window.onload = function() {
         this.on('enterframe', function() {
           if (core.input.space) {
             if (!pre) {
-              removeScene(this);
+              removeAllChild(this);
               let gameStartScene = new GameStartScene();
             }
-            pre = true;
           } else{
             pre = false;
           }
@@ -374,7 +406,7 @@ window.onload = function() {
     });
 
     //関数
-    function removeScene(scene){
+    function removeAllChild(scene){
       while(scene.firstChild){
         scene.removeChild(scene.firstChild);
       }
