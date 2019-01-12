@@ -10,8 +10,9 @@ window.onload = function() {
   core.keybind(90, "y");
   core.keybind(81, "q");
   core.keybind(32, "space");
-  core.preload('bullet1.png','boss_vermiena.png', 'playscreen.png', 'shot1.png', 'snake.png',
-               'putting_scissors.mp3', 'attack3.mp3', 'hidan.wav', 'star.png');
+  core.preload('img/bullet1.png','img/boss_vermiena.png', 'img/playscreen.png', 'img/shot1.png',
+               'img/snake.png', 'img/star.png',
+               'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -94,13 +95,13 @@ window.onload = function() {
         const Enemy = Class.create(Sprite, {
           initialize: function(scene) {
             Sprite.call(this, enemySize, enemySize);
-            this.image = core.assets['snake.png'];
+            this.image = core.assets['img/snake.png'];
             this.x = enemyDefaultPosition.x;
             this.y = enemyDefaultPosition.y;
             this.life = enemyLife;
             this.death = 0; //撃破時のframe記録用
             this.frame = 0;
-            this.deathSe = core.assets['attack3.mp3'].clone();
+            this.deathSe = core.assets['sound/attack3.mp3'].clone();
             scene.addChild(this);
             this.on('enterframe', function() {
               // 撃破処理
@@ -123,11 +124,11 @@ window.onload = function() {
         const Player = Class.create(Sprite, {
           initialize: function(scene) {
             Sprite.call(this, playerSize, playerSize);
-            this.image = core.assets['boss_vermiena.png'];
+            this.image = core.assets['img/boss_vermiena.png'];
             this.x = defaultPosition.x;
             this.y = defaultPosition.y;
             this.life = playerLife;
-            this.deathSe = core.assets['hidan.wav'].clone();
+            this.deathSe = core.assets['sound/hidan.wav'].clone();
             this.frame = 12;
             let startAge = this.age;  //無敵時間用
             let movePermission = true;  //移動有効/無効
@@ -149,13 +150,13 @@ window.onload = function() {
             const Shot = Class.create(Sprite, {
               initialize: function(group, gNum, pos, player, se) {
                 Sprite.call(this, 20, 60);
-                this.image = core.assets['shot1.png'];
+                this.image = core.assets['img/shot1.png'];
                 this.x = playersPlace.x;
                 this.y = playersPlace.y;
                 this.speed = 0;
                 this.gNum = gNum;
                 this.pos = pos; //相対的な位置
-                this.shotSe = core.assets['putting_scissors.mp3'].clone();
+                this.shotSe = core.assets['sound/putting_scissors.mp3'].clone();
                 this.se = se;
                 group.addChild(this);
                 this.on('enterframe', function() {
@@ -280,7 +281,7 @@ window.onload = function() {
         this.addChild(bulletGroup);
 
         const bullet = new Sprite(32, 32);
-        bullet.image = core.assets['bullet1.png'];
+        bullet.image = core.assets['img/bullet1.png'];
         bullet.x = centerX-bullet.width/2;
         bullet.y = 16;
         this.frame = 0;
@@ -297,7 +298,7 @@ window.onload = function() {
 
         // 外枠
         const playscreen = new Sprite(700, 700);
-        playscreen.image = core.assets['playscreen.png'];
+        playscreen.image = core.assets['img/playscreen.png'];
 
         this.addChild(playscreen);
 
@@ -311,7 +312,7 @@ window.onload = function() {
         this.addChild(lifeLabel);
 
         const lifeStar = new Sprite(31*playerLife, 31);
-        lifeStar.image = core.assets['star.png'];
+        lifeStar.image = core.assets['img/star.png'];
         lifeStar.x = 560;
         lifeStar.y = 70;
         this.addChild(lifeStar);
