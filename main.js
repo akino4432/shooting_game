@@ -316,6 +316,13 @@ window.onload = function() {
         lifeStar.y = 70;
         this.addChild(lifeStar);
 
+        const shotKeyLabel = new templateLabel('ショット：X', 540, 440);
+        this.addChild(shotKeyLabel);
+        const lowKeyLabel = new templateLabel('低速移動：Z', 540, 480);
+        this.addChild(lowKeyLabel);
+        const pauseKeyLabel = new templateLabel('ポーズ：SPACE', 540, 520);
+        this.addChild(pauseKeyLabel);
+
         //ポーズシーン作成
         const pauseScene = new PauseScene();
 
