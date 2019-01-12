@@ -11,7 +11,7 @@ window.onload = function() {
   core.keybind(81, "q");
   core.keybind(32, "space");
   core.preload('img/bullet1.png','img/boss_vermiena.png', 'img/playscreen.png', 'img/shot1.png',
-               'img/snake.png', 'img/star.png',
+               'img/snake.png', 'img/star.png','img/bullet2.png','img/bullet3.png',
                'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav');
   core.onload = function() {
     //シーン
@@ -102,6 +102,50 @@ window.onload = function() {
             this.death = 0; //撃破時のframe記録用
             this.frame = 0;
             this.deathSe = core.assets['sound/attack3.mp3'].clone();
+            this.bullets = [];
+
+            const Bullet = Class.create(Sprite, {
+              initialize: function(width, height, imgName, collisionDetection){
+                Sprite.call(this, width, height);
+                this.image = core.assets[imgName];
+                this.x = enemyPlace.x;
+                this.y = enemyPlace.y;
+                this.speed = 0;
+                this.outside = 20;  //画面外の、弾がなくならない範囲
+                this.on('enterframe', function(){
+                  //当たり判定
+                  if (this.within(player, playerCollisionDetection+collisionDetection)){
+                    collision = true;
+                  }
+                  // 画面外処理
+                  if (this.speed !== 0){
+                    if ((this.x <= 0 - this.width - this.outside)||
+                       (this.x >= playScreenSize.x + this.outside)||
+                       (this.y <= 0 - this.height - this.outside)||
+                       (this.y >= playScreenSize.y + this.outside)){
+                         this.speed = 0;
+                         this.x = enemyPlace.x;
+                         this.y = enemyPlace.y;
+                       }
+                  }
+                });
+              }
+            });
+
+            const bullet1 = new Bullet(16, 16, 'img/bullet1.png', 4);
+            bullet1.x = this.x + Math.floor((playerSize-bullet1.width)/2);
+            bullet1.y = this.y;
+            bullet1.speed = 5;
+            bullet1.on('enterframe', function(){
+              if (this.y === enemyPlace.y){
+                this.x = enemy.x + Math.floor((playerSize-this.width)/2);
+                this.y = enemy.y;
+                this.speed = 5;
+              }
+              this.y += this.speed;
+            })
+            this.bullets[0] = bullet1;
+
             scene.addChild(this);
             this.on('enterframe', function() {
               // 撃破処理
@@ -190,7 +234,7 @@ window.onload = function() {
 
             // ショットのグループをループで作成
             let shotGroup = [];
-            for(var i = 0; i < shotSum; i++){
+            for(let i = 0; i < shotSum; i++){
               shotGroup[i] = new ShotGroup(i, this, scene);
             }
 
@@ -277,24 +321,12 @@ window.onload = function() {
 
         const player = new Player(this);
 
-        let bulletGroup = new Group();
+        const bulletGroup = new Group();
         this.addChild(bulletGroup);
 
-        const bullet = new Sprite(32, 32);
-        bullet.image = core.assets['img/bullet1.png'];
-        bullet.x = centerX-bullet.width/2;
-        bullet.y = 16;
-        this.frame = 0;
-        bullet.on('enterframe', function() {
-          this.y += 5;
-          if (this.y >= screenSize.y) {
-            this.y = 16;
-          };
-          if(this.within(player, playerCollisionDetection + 8)){
-            collision = true;
-          };
-        });
-        bulletGroup.addChild(bullet);
+        for (let i = 0; i < enemy.bullets.length; i++){
+          bulletGroup.addChild(enemy.bullets[i]);
+        }
 
         // 外枠
         const playscreen = new Sprite(700, 700);
