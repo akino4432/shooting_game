@@ -67,7 +67,7 @@ window.onload = function() {
                                       'y': fourCoordinates.y1 + 60};
 
         const playerLife = 3;
-        const enemyLife = 300;
+        const enemyLife = 600;
         let collision = false;
         let phaseNum = 0;
 
@@ -194,9 +194,27 @@ window.onload = function() {
                 phaseNum = 1;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                for(let i=0;i<=10;i++){
-                  let bullet1 = new BasicBullet(16, 16, 'img/bullet1.png', 0, 4, 0, 6, 3, 95, 85, 1, 'random', 1);
-                  enemy.bullets.push(bullet1);
+                for(let i=0;i<8;i++){
+                  if (i % 4 === 3) continue;
+                  let frame = i % 2;
+                  for(let k=0;k<30;k++){
+                    let bullet1 = new BasicBullet(
+                      /* width */ 32,
+                      /* height */ 32,
+                      /* imageName */ 'img/bullet2.png',
+                      /* frame */ frame,
+                      /* collisionDetection */ 8,
+                      /* num */ i,
+                      /* speedMax */ 4,
+                      /* speedMin */ 4,
+                      /* angleMax */ k * 12 + frame * 6,
+                      /* angleMin */ k * 12 + frame * 6 -3,
+                      /* startX */ null,
+                      /* startY */ null,
+                      /* acceleration */ 1
+                    );
+                    enemy.bullets.push(bullet1);
+                  }
                 }
               }
               if ((phaseNum === 1)&&(this.life / enemyLife < 2/3)){
@@ -215,7 +233,7 @@ window.onload = function() {
               }
 
               if(phaseNum === 1){
-                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
+                bulletNum = Math.floor((this.age-phaseStartAge)/30) % 8;
               }
               if(phaseNum === 2){
                 bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
