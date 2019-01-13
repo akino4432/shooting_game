@@ -69,6 +69,7 @@ window.onload = function() {
         const playerLife = 3;
         const enemyLife = 300;
         let collision = false;
+        let phaseNum = 0;
 
         const PauseScene = Class.create(Scene, {
           initialize: function(scene) {
@@ -105,9 +106,10 @@ window.onload = function() {
             this.bullets = [];
 
             const Bullet = Class.create(Sprite, {
-              initialize: function(width, height, imgName, collisionDetection){
+              initialize: function(width, height, imgName, collisionDetection, num){
                 Sprite.call(this, width, height);
                 this.image = core.assets[imgName];
+                this.num = num;
                 this.x = enemyPlace.x;
                 this.y = enemyPlace.y;
                 this.speed = 0;
@@ -133,41 +135,27 @@ window.onload = function() {
             });
 
             const TestBullet = Class.create(Bullet, {
-              initialize: function(width, height, imgName, collisionDetection, speed, angle){
-                Bullet.call(this, width, height, imgName, collisionDetection);
-                this.x = enemy.x + Math.floor((playerSize-this.width)/2);
-                this.y = enemy.y;
-                this.speed = speed;
+              initialize: function(width, height, imgName, collisionDetection, num, speed, angle){
+                Bullet.call(this, width, height, imgName, collisionDetection, num);
                 this.angle = angle;
                 this.on('enterframe', function(){
-                  if (this.y === enemyPlace.y){
+                  //待機中かつ順番
+                  if ((this.y === enemyPlace.y)&&(bulletNum === this.num)){
                     this.x = enemy.x + Math.floor((playerSize-this.width)/2);
                     this.y = enemy.y;
                     this.speed = speed;
                   }
-                  this.y += this.speed;
+                  this.x += this.speed*Math.sin(this.angle/180*Math.PI);
+                  this.y += this.speed*Math.cos(this.angle/180*Math.PI);
                 })
               }
             });
 
-            function phase1(){
-              const bullet1 = new TestBullet(16, 16, 'img/bullet1.png', 4, 5, 0);
-              enemy.bullets.push(bullet1);
-            }
-
-            function phase2(){
-              const bullet2 = new TestBullet(32, 32, 'img/bullet2.png', 8, 5, 0);
-              enemy.bullets.push(bullet2);
-            }
-
-            function phase3(){
-              const bullet3 = new TestBullet(50, 50, 'img/bullet3.png', 15, 5, 0);
-              enemy.bullets.push(bullet3);
-            }
-
-            let phaseNum = 0;
-
             scene.addChild(this);
+
+            //enemyのループ処理
+            let bulletNum = -1;
+            let phaseStartAge = 0;
             this.on('enterframe', function() {
               // 撃破処理
               if ((this.life <= 0)&&(this.death === 0)){
@@ -186,15 +174,37 @@ window.onload = function() {
               //phase分岐
               if ((phaseNum === 0)&&(this.life / enemyLife >= 2/3)){
                 phaseNum = 1;
-                phase1();
+                phaseStartAge = this.age;
+                enemy.bullets = [];
+                for(let i=0;i<=2;i++){
+                  let angle = i*20-20
+                  let bullet1 = new TestBullet(16, 16, 'img/bullet1.png', 4, 0, 5, angle);
+                  enemy.bullets.push(bullet1);
+                }
               }
               if ((phaseNum === 1)&&(this.life / enemyLife < 2/3)){
                 phaseNum = 2;
-                phase2();
+                phaseStartAge = this.age;
+                enemy.bullets = [];
+                const bullet2 = new TestBullet(32, 32, 'img/bullet2.png', 8, 0, 5, 0);
+                enemy.bullets.push(bullet2);
               }
               if ((phaseNum === 2)&&(this.life / enemyLife < 1/3)){
                 phaseNum = 3;
-                phase3();
+                phaseStartAge = this.age;
+                enemy.bullets = [];
+                const bullet3 = new TestBullet(50, 50, 'img/bullet3.png', 15, 0, 5, 0);
+                enemy.bullets.push(bullet3);
+              }
+
+              if(phaseNum === 1){
+                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
+              }
+              if(phaseNum === 2){
+                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
+              }
+              if(phaseNum === 3){
+                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
               }
             });
           }
@@ -395,8 +405,7 @@ window.onload = function() {
         core.replaceScene(this);
         // GamePlaySceneのループ処理
         let pre = true;
-        let bullets = 0;
-        let preBullets = 0;
+        let prePhase = 0;
         this.on('enterframe', function() {
           // クリア判定
           if (enemy.death){
@@ -428,17 +437,14 @@ window.onload = function() {
           }
 
           //弾幕更新
-          if (enemy.bullets.length > bullets){
-            //前のフェイズの弾幕削除
-            for (let i = preBullets; i < bullets; i++){
-              bulletGroup.removeChild(enemy.bullets[i]);
-            }
-            for (let i = bullets; i < enemy.bullets.length; i++){
+          if (phaseNum !== prePhase){
+            removeAllChild(bulletGroup);
+            for(i=0;i < enemy.bullets.length;i++){
               bulletGroup.addChild(enemy.bullets[i]);
             }
-            preBullets = bullets;
-            bullets = enemy.bullets.length;
           }
+
+          prePhase = phaseNum;
         });
       }
     });
