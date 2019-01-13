@@ -221,14 +221,51 @@ window.onload = function() {
                 phaseNum = 2;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                const bullet2 = new BasicBullet(32, 32, 'img/bullet2.png', 0, 8, 0, 7, 4, 0, 0, null, null, 1);
-                enemy.bullets.push(bullet2);
+                for(i = 0; i < 90; i++){
+                  if(i % 18 === 0){
+                    for(k = 0; k < 3; k++){
+                      let bullet2 = new BasicBullet(
+                        /* width */ 50,
+                        /* height */ 50,
+                        /* imageName */ 'img/bullet3.png',
+                        /* frame */ 0,
+                        /* collisionDetection */ 15,
+                        /* num */ i,
+                        /* speedMax */ 5,
+                        /* speedMin */ 5,
+                        /* angleMax */ (k - 1)*20,
+                        /* angleMin */ (k - 1)*20,
+                        /* startX */ null,
+                        /* startY */ null,
+                        /* acceleration */ 1
+                      );
+                      enemy.bullets.push(bullet2);
+                    }
+                  }
+                  let frame = i % 4;
+                  let bullet2 = new BasicBullet(
+                    /* width */ 16,
+                    /* height */ 16,
+                    /* imageName */ 'img/bullet1.png',
+                    /* frame */ frame,
+                    /* collisionDetection */ 4,
+                    /* num */ i,
+                    /* speedMax */ 5,
+                    /* speedMin */ 4,
+                    /* angleMax */ 10,
+                    /* angleMin */ -10,
+                    /* startX */ 'random',
+                    /* startY */ 10,
+                    /* acceleration */ 1
+                  );
+                  enemy.bullets.push(bullet2);
+                }
               }
               if ((phaseNum === 2)&&(this.life / enemyLife < 1/3)){
                 phaseNum = 3;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                const bullet3 = new BasicBullet(50, 50, 'img/bullet3.png', 0, 15, 0, 5, 5, 20, -20);
+                let bullet3 = new BasicBullet(50, 50, 'img/bullet3.png', 0, 15, 0, 5, 5, 20, -20);
                 enemy.bullets.push(bullet3);
               }
 
@@ -236,7 +273,7 @@ window.onload = function() {
                 bulletNum = Math.floor((this.age-phaseStartAge)/30) % 8;
               }
               if(phaseNum === 2){
-                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
+                bulletNum = Math.floor((this.age-phaseStartAge)/5) % 90;
               }
               if(phaseNum === 3){
                 bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
