@@ -80,6 +80,7 @@ window.onload = function() {
               'Press SPACE to restart.', 230, 380);
             this.addChild(pauseLabel);
             this.addChild(restartLabel);
+            core.pushScene(this);
             this.on('enterframe', function(){
               if (core.input.space){
                 if (!pre){
@@ -265,8 +266,46 @@ window.onload = function() {
                 phaseNum = 3;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                let bullet3 = new BasicBullet(50, 50, 'img/bullet3.png', 0, 15, 0, 5, 5, 20, -20);
-                enemy.bullets.push(bullet3);
+                for(i = 0; i < 15; i++){
+                  for(k = 0; k < 10; k++){
+                    if(i % 5 === 0){
+                      let frame = k % 4;
+                      let bullet3 = new BasicBullet(
+                        /* width */ 50,
+                        /* height */ 50,
+                        /* imageName */ 'img/bullet3.png',
+                        /* frame */ frame,
+                        /* collisionDetection */ 15,
+                        /* num */ i,
+                        /* speedMax */ 2,
+                        /* speedMin */ 2,
+                        /* angleMax */ 90 - 180 * (k%2),
+                        /* angleMin */ 90 - 180 * (k%2),
+                        /* startX */ 20 - 50 + 550 * (k%2),
+                        /* startY */ 60 + k * 62,
+                        /* acceleration */ 1
+                      );
+                      enemy.bullets.push(bullet3);
+                    }
+                    let frame = k % 4;
+                    let bullet3 = new BasicBullet(
+                      /* width */ 16,
+                      /* height */ 16,
+                      /* imageName */ 'img/bullet1.png',
+                      /* frame */ frame,
+                      /* collisionDetection */ 4,
+                      /* num */ i,
+                      /* speedMax */ 3,
+                      /* speedMin */ 3,
+                      /* angleMax */ 0,
+                      /* angleMin */ 0,
+                      /* startX */ k * 50 + 30,
+                      /* startY */ 10,
+                      /* acceleration */ 1
+                    );
+                    enemy.bullets.push(bullet3);
+                  }
+                }
               }
 
               if(phaseNum === 1){
@@ -276,7 +315,7 @@ window.onload = function() {
                 bulletNum = Math.floor((this.age-phaseStartAge)/5) % 90;
               }
               if(phaseNum === 3){
-                bulletNum = Math.floor((this.age-phaseStartAge)/core.fps) % 10;
+                bulletNum = Math.floor((this.age-phaseStartAge)/30) % 15;
               }
             });
           }
@@ -472,7 +511,7 @@ window.onload = function() {
         this.addChild(quitKeyLabel);
 
         //ポーズシーン作成
-        const pauseScene = new PauseScene();
+
 
         core.replaceScene(this);
         // GamePlaySceneのループ処理
@@ -490,7 +529,8 @@ window.onload = function() {
           if (core.input.space){
             if (!pre){
               pre = true;
-              core.pushScene(pauseScene);
+              // 手前に表示するため毎回作成
+              let pauseScene = new PauseScene();
             }
           } else{
             pre = false;
