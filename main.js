@@ -106,9 +106,10 @@ window.onload = function() {
             this.bullets = [];
 
             const Bullet = Class.create(Sprite, {
-              initialize: function(width, height, imgName, collisionDetection, num){
+              initialize: function(width, height, imgName, frame, collisionDetection, num){
                 Sprite.call(this, width, height);
                 this.image = core.assets[imgName];
+                this.frame = frame;
                 this.num = num;
                 this.x = enemyPlace.x;
                 this.y = enemyPlace.y;
@@ -131,20 +132,37 @@ window.onload = function() {
                        }
                   }
                 });
+              },
+              enemyPosition: function(){
+                const x = enemy.x + Math.floor((playerSize-this.width)/2);
+                const y = enemy.y + Math.floor((playerSize-this.height)/2);
+                return {'x': x, 'y': y};
               }
             });
 
-            const TestBullet = Class.create(Bullet, {
-              initialize: function(width, height, imgName, collisionDetection, num, speed, angle){
-                Bullet.call(this, width, height, imgName, collisionDetection, num);
-                this.angle = angle;
+            const BasicBullet = Class.create(Bullet, {
+              initialize: function(width, height, imgName, frame, collisionDetection, num,
+                                   speedMax, speedMin, angleMax, angleMin,
+                                   startX=null, startY=null, acceleration = 1){
+                Bullet.call(this, width, height, imgName, frame, collisionDetection, num);
+                this.angle = 0;
+                if (startX === null) startX = this.enemyPosition().x;
+                if (startY === null) startY = this.enemyPosition().y;
+                this.startXRandom = (startX === 'random') ? true: false;
+                this.startYRandom = (startY === 'random') ? true: false;
                 this.on('enterframe', function(){
                   //待機中かつ順番
                   if ((this.y === enemyPlace.y)&&(bulletNum === this.num)){
-                    this.x = enemy.x + Math.floor((playerSize-this.width)/2);
-                    this.y = enemy.y;
-                    this.speed = speed;
+                    if (this.startXRandom) startX = Math.floor(Math.random() *
+                                               (playScreenSize.x+this.width))+20-this.width;
+                    if (this.startYRandom) startY = Math.floor(Math.random() *
+                                               (playScreenSize.y+this.height))+20-this.height;
+                    this.x = startX;
+                    this.y = startY;
+                    this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
+                    this.angle = Math.floor(Math.random() * (angleMax-angleMin))+angleMin;
                   }
+                  this.speed *= acceleration;
                   this.x += this.speed*Math.sin(this.angle/180*Math.PI);
                   this.y += this.speed*Math.cos(this.angle/180*Math.PI);
                 })
@@ -176,9 +194,8 @@ window.onload = function() {
                 phaseNum = 1;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                for(let i=0;i<=2;i++){
-                  let angle = i*20-20
-                  let bullet1 = new TestBullet(16, 16, 'img/bullet1.png', 4, 0, 5, angle);
+                for(let i=0;i<=10;i++){
+                  let bullet1 = new BasicBullet(16, 16, 'img/bullet1.png', 0, 4, 0, 6, 3, 95, 85, 1, 'random', 1);
                   enemy.bullets.push(bullet1);
                 }
               }
@@ -186,14 +203,14 @@ window.onload = function() {
                 phaseNum = 2;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                const bullet2 = new TestBullet(32, 32, 'img/bullet2.png', 8, 0, 5, 0);
+                const bullet2 = new BasicBullet(32, 32, 'img/bullet2.png', 0, 8, 0, 7, 4, 0, 0, null, null, 1);
                 enemy.bullets.push(bullet2);
               }
               if ((phaseNum === 2)&&(this.life / enemyLife < 1/3)){
                 phaseNum = 3;
                 phaseStartAge = this.age;
                 enemy.bullets = [];
-                const bullet3 = new TestBullet(50, 50, 'img/bullet3.png', 15, 0, 5, 0);
+                const bullet3 = new BasicBullet(50, 50, 'img/bullet3.png', 0, 15, 0, 5, 5, 20, -20);
                 enemy.bullets.push(bullet3);
               }
 
