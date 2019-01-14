@@ -136,10 +136,11 @@ window.onload = function() {
 
         const BasicBullet = Class.create(Bullet, {
           initialize: function(enemy, bullet, frame, num,
-                               speedMax, speedMin, angleMax, angleMin,
-                               startX=null, startY=null, acceleration = 1){
+                               speedMax, speedMin, angleMax, angleMin, playerAiming = false,
+                               startX='enemy', startY='enemy', acceleration = 1){
             Bullet.call(this, enemy, bullet, frame, num);
             this.angle = 0;
+            this.playerAiming = playerAiming;
             if (startX === 'enemy') this.startXType =  'enemy';
             if (startY === 'enemy') this.startYType =  'enemy';
             if (startX === 'random') this.startXType =  'random';
@@ -152,6 +153,7 @@ window.onload = function() {
               preNum = this.enemy.bulletNum;
               //待機中かつ順番
               if ((bulletPermission)&&(this.y === enemyPlace.y)&&(this.enemy.bulletNum === this.num)){
+                this.angle = (this.playerAiming) ? this.playerAngle() : 0;
                 if (this.startXType === 'enemy') startX = this.enemyPosition().x;
                 if (this.startYType === 'enemy') startY = this.enemyPosition().y;
                 if (this.startXType === 'random') startX = Math.floor(Math.random() *
@@ -161,13 +163,16 @@ window.onload = function() {
                 this.x = startX;
                 this.y = startY;
                 this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
-                this.angle = Math.floor(Math.random() * (angleMax-angleMin))+angleMin;
+                this.angle += (Math.floor(Math.random() * (angleMax-angleMin))+angleMin)/180*Math.PI;
                 bulletPermission = false; //1ループで1射のみ
               }
               this.speed *= acceleration;
-              this.x += this.speed*Math.sin(this.angle/180*Math.PI);
-              this.y += this.speed*Math.cos(this.angle/180*Math.PI);
+              this.x += this.speed*Math.sin(this.angle);
+              this.y += this.speed*Math.cos(this.angle);
             })
+          },
+          playerAngle: function(){
+            return Math.atan2(player.x-this.enemy.x, player.y-this.enemy.y);
           }
         });
 
@@ -258,6 +263,7 @@ window.onload = function() {
                     /* speedMin */ 4,
                     /* angleMax */ k * 12 + frame * 6,
                     /* angleMin */ k * 12 + frame * 6 -3,
+                    /* playerAiming */ false,
                     /* startX */ 'enemy',
                     /* startY */ 'enemy',
                     /* acceleration */ 1
@@ -280,6 +286,7 @@ window.onload = function() {
                         /* speedMin */ 5,
                         /* angleMax */ (k - 1)*20,
                         /* angleMin */ (k - 1)*20,
+                        /* playerAiming */ true,
                         /* startX */ 'enemy',
                         /* startY */ 'enemy',
                         /* acceleration */ 1
@@ -297,6 +304,7 @@ window.onload = function() {
                     /* speedMin */ 4,
                     /* angleMax */ 10,
                     /* angleMin */ -10,
+                    /* playerAiming */ false,
                     /* startX */ 'random',
                     /* startY */ 10,
                     /* acceleration */ 1
@@ -318,6 +326,7 @@ window.onload = function() {
                       /* speedMin */ 2,
                       /* angleMax */ 90 - 180 * (k%2),
                       /* angleMin */ 90 - 180 * (k%2),
+                      /* playerAiming */ false,
                       /* startX */ 20 - 50 + 550 * (k%2),
                       /* startY */ 60 + k * 62,
                       /* acceleration */ 1
@@ -334,6 +343,7 @@ window.onload = function() {
                     /* speedMin */ 3,
                     /* angleMax */ 0,
                     /* angleMin */ 0,
+                    /* playerAiming */ false,
                     /* startX */ k * 50 + 30,
                     /* startY */ 10,
                     /* acceleration */ 1
