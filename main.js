@@ -69,7 +69,7 @@ window.onload = function() {
         const playerLife = 3;
         const enemyLife = 300;
         let collision = false;
-        let phaseNum = 0;
+        let enemyInvincible = false;
 
         const PauseScene = Class.create(Scene, {
           initialize: function(scene) {
@@ -94,100 +94,101 @@ window.onload = function() {
           }
         });
 
+        const bulletSmall = {'width': 16, 'height': 16, 'imgName': 'img/bullet1.png', 'collisionDetection': 4};
+        const bulletMiddle = {'width': 32, 'height': 32, 'imgName': 'img/bullet2.png', 'collisionDetection': 8};
+        const bulletLarge = {'width': 50, 'height': 50, 'imgName': 'img/bullet3.png', 'collisionDetection': 15};
+
+        const Bullet = Class.create(Sprite, {
+          initialize: function(enemy, bullet, frame, num){
+            Sprite.call(this, bullet.width, bullet.height);
+            this.image = core.assets[bullet.imgName];
+            this.frame = frame;
+            this.num = num;
+            this.x = enemyPlace.x;
+            this.y = enemyPlace.y;
+            this.speed = 0;
+            this.enemy = enemy;
+            this.outside = 20;  //画面外の、弾がなくならない範囲
+            this.on('enterframe', function(){
+              //当たり判定
+              if (this.within(player, playerCollisionDetection + bullet.collisionDetection)){
+                collision = true;
+              }
+              // 画面外処理
+              if (this.speed !== 0){
+                if ((this.x <= 0 - this.width - this.outside)||
+                   (this.x >= playScreenSize.x + this.outside)||
+                   (this.y <= 0 - this.height - this.outside)||
+                   (this.y >= playScreenSize.y + this.outside)){
+                     this.speed = 0;
+                     this.x = enemyPlace.x;
+                     this.y = enemyPlace.y;
+                   }
+              }
+            });
+          },
+          enemyPosition: function(){
+            const x = this.enemy.x + Math.floor((playerSize-this.width)/2);
+            const y = this.enemy.y + Math.floor((playerSize-this.height)/2);
+            return {'x': x, 'y': y};
+          }
+        });
+
+        const BasicBullet = Class.create(Bullet, {
+          initialize: function(enemy, bullet, frame, num,
+                               speedMax, speedMin, angleMax, angleMin,
+                               startX=null, startY=null, acceleration = 1){
+            Bullet.call(this, enemy, bullet, frame, num);
+            this.angle = 0;
+            if (startX === 'enemy') this.startXType =  'enemy';
+            if (startY === 'enemy') this.startYType =  'enemy';
+            if (startX === 'random') this.startXType =  'random';
+            if (startY === 'random') this.startYType =  'random';
+            this.on('enterframe', function(){
+              //待機中かつ順番
+              if ((this.y === enemyPlace.y)&&(this.enemy.bulletNum === this.num)){
+                if (this.startXType === 'enemy') startX = this.enemyPosition().x;
+                if (this.startYType === 'enemy') startY = this.enemyPosition().y;
+                if (this.startXType === 'random') startX = Math.floor(Math.random() *
+                                                           (playScreenSize.x+this.width))+20-this.width;
+                if (this.startYType === 'random') startY = Math.floor(Math.random() *
+                                                           (playScreenSize.y+this.height))+20-this.height;
+                this.x = startX;
+                this.y = startY;
+                this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
+                this.angle = Math.floor(Math.random() * (angleMax-angleMin))+angleMin;
+              }
+              this.speed *= acceleration;
+              this.x += this.speed*Math.sin(this.angle/180*Math.PI);
+              this.y += this.speed*Math.cos(this.angle/180*Math.PI);
+            })
+          }
+        });
+
         const Enemy = Class.create(Sprite, {
           initialize: function(scene) {
             Sprite.call(this, enemySize, enemySize);
             this.image = core.assets['img/snake.png'];
-            this.x = enemyDefaultPosition.x;
-            this.y = enemyDefaultPosition.y;
+            this.x = 20;
+            this.y = 20;
             this.life = enemyLife;
-            this.death = 0; //撃破時のframe記録用
             this.frame = 0;
             this.deathSe = core.assets['sound/attack3.mp3'].clone();
             this.bullets = [];
+            this.bulletNum = -1;
+            this.phaseNum = 0;
+            this.enemyInterval = false;
+            this.phaseStartAge = 0;
+            this.scene = scene;
 
-            const bulletSmall = {'width': 16, 'height': 16, 'imgName': 'img/bullet1.png', 'collisionDetection': 4};
-            const bulletMiddle = {'width': 32, 'height': 32, 'imgName': 'img/bullet2.png', 'collisionDetection': 8};
-            const bulletLarge = {'width': 50, 'height': 50, 'imgName': 'img/bullet3.png', 'collisionDetection': 15};
-
-            const Bullet = Class.create(Sprite, {
-              initialize: function(bullet, frame, num){
-                Sprite.call(this, bullet.width, bullet.height);
-                this.image = core.assets[bullet.imgName];
-                this.frame = frame;
-                this.num = num;
-                this.x = enemyPlace.x;
-                this.y = enemyPlace.y;
-                this.speed = 0;
-                this.outside = 20;  //画面外の、弾がなくならない範囲
-                this.on('enterframe', function(){
-                  //当たり判定
-                  if (this.within(player, playerCollisionDetection + bullet.collisionDetection)){
-                    collision = true;
-                  }
-                  // 画面外処理
-                  if (this.speed !== 0){
-                    if ((this.x <= 0 - this.width - this.outside)||
-                       (this.x >= playScreenSize.x + this.outside)||
-                       (this.y <= 0 - this.height - this.outside)||
-                       (this.y >= playScreenSize.y + this.outside)){
-                         this.speed = 0;
-                         this.x = enemyPlace.x;
-                         this.y = enemyPlace.y;
-                       }
-                  }
-                });
-              },
-              enemyPosition: function(){
-                const x = enemy.x + Math.floor((playerSize-this.width)/2);
-                const y = enemy.y + Math.floor((playerSize-this.height)/2);
-                return {'x': x, 'y': y};
-              }
-            });
-
-            const BasicBullet = Class.create(Bullet, {
-              initialize: function(bullet, frame, num,
-                                   speedMax, speedMin, angleMax, angleMin,
-                                   startX=null, startY=null, acceleration = 1){
-                Bullet.call(this, bullet, frame, num);
-                this.angle = 0;
-                if (startX === null) startX = this.enemyPosition().x;
-                if (startY === null) startY = this.enemyPosition().y;
-                this.startXRandom = (startX === 'random') ? true: false;
-                this.startYRandom = (startY === 'random') ? true: false;
-                this.on('enterframe', function(){
-                  //待機中かつ順番
-                  if ((this.y === enemyPlace.y)&&(bulletNum === this.num)){
-                    if (this.startXRandom) startX = Math.floor(Math.random() *
-                                               (playScreenSize.x+this.width))+20-this.width;
-                    if (this.startYRandom) startY = Math.floor(Math.random() *
-                                               (playScreenSize.y+this.height))+20-this.height;
-                    this.x = startX;
-                    this.y = startY;
-                    this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
-                    this.angle = Math.floor(Math.random() * (angleMax-angleMin))+angleMin;
-                  }
-                  this.speed *= acceleration;
-                  this.x += this.speed*Math.sin(this.angle/180*Math.PI);
-                  this.y += this.speed*Math.cos(this.angle/180*Math.PI);
-                })
-              }
-            });
-
-            scene.addChild(this);
+            this.scene.addChild(this);
 
             //enemyのループ処理
-            let bulletNum = -1;
-            let phaseStartAge = 0;
             this.on('enterframe', function() {
-              // 撃破処理
-              if ((this.life <= 0)&&(this.death === 0)){
-                this.deathSe.play()
-                this.x = enemyPlace.x;
-                this.y = enemyPlace.y;
-                this.death = scene.age;
-              }
               this.frame = Math.floor(this.age/4) % 3;
+
+              //無敵処理
+              enemyInvincible = this.enemyInterval;
 
               //当たり判定
               if (this.within(player, playerCollisionDetection+20)){
@@ -195,123 +196,154 @@ window.onload = function() {
               }
 
               //phase分岐
-              if ((phaseNum === 0)&&(this.life / enemyLife >= 2/3)){
-                phaseNum = 1;
-                phaseStartAge = this.age;
-                enemy.bullets = [];
-                for(let i=0;i<8;i++){
-                  if (i % 4 === 3) continue;
-                  let frame = i % 2;
-                  for(let k=0;k<30;k++){
-                    let bullet1 = new BasicBullet(
-                      /* bullet */ bulletMiddle,
-                      /* frame */ frame,
-                      /* num */ i,
-                      /* speedMax */ 4,
-                      /* speedMin */ 4,
-                      /* angleMax */ k * 12 + frame * 6,
-                      /* angleMin */ k * 12 + frame * 6 -3,
-                      /* startX */ null,
-                      /* startY */ null,
-                      /* acceleration */ 1
-                    );
-                    enemy.bullets.push(bullet1);
-                  }
-                }
+              if ((this.phaseNum === 0)&&(this.life / enemyLife >= 2/3)&&(!this.enemyInterval)){
+                this.enemyInterval = true;
+                this.moveToDefaultPosition();
               }
-              if ((phaseNum === 1)&&(this.life / enemyLife < 2/3)){
-                phaseNum = 2;
-                phaseStartAge = this.age;
-                enemy.bullets = [];
-                for(i = 0; i < 90; i++){
-                  if(i % 18 === 0){
-                    for(k = 0; k < 3; k++){
-                      let bullet2 = new BasicBullet(
-                        /* bullet */ bulletLarge,
-                        /* frame */ 0,
-                        /* num */ i,
-                        /* speedMax */ 5,
-                        /* speedMin */ 5,
-                        /* angleMax */ (k - 1)*20,
-                        /* angleMin */ (k - 1)*20,
-                        /* startX */ null,
-                        /* startY */ null,
-                        /* acceleration */ 1
-                      );
-                      enemy.bullets.push(bullet2);
-                    }
-                  }
-                  let frame = i % 4;
-                  let bullet2 = new BasicBullet(
-                    /* bullet */ bulletSmall,
+              if ((this.phaseNum === 1)&&(this.life / enemyLife < 2/3)&&(!this.enemyInterval)){
+                removeAllChild(bulletGroup);
+                this.enemyInterval = true;
+                this.moveToDefaultPosition();
+              }
+              if ((this.phaseNum === 2)&&(this.life / enemyLife < 1/3)&&(!this.enemyInterval)){
+                removeAllChild(bulletGroup);
+                this.enemyInterval = true;
+                this.moveToDefaultPosition();
+              }
+              if ((this.phaseNum === 3)&&(this.life === 0)){
+                removeAllChild(bulletGroup);
+                this.phaseJunction();
+              }
+
+              if(this.phaseNum === 1){
+                this.bulletNum = Math.floor((this.age-this.phaseStartAge)/30) % 8;
+              }
+              if(this.phaseNum === 2){
+                this.bulletNum = Math.floor((this.age-this.phaseStartAge)/5) % 90;
+              }
+              if(this.phaseNum === 3){
+                this.bulletNum = Math.floor((this.age-this.phaseStartAge)/30) % 15;
+              }
+            });
+          },
+          moveToDefaultPosition: function(){
+            this.tl.moveTo(enemyDefaultPosition.x, enemyDefaultPosition.y, 30, enchant.Easing.easeOutQuart)
+                    .exec(this.phaseJunction);
+          },
+          phaseJunction: function(){
+            this.enemyInterval = false;
+            this.phaseNum++;
+            this.phaseStartAge = this.age;
+            this.bullets = [];
+            switch (this.phaseNum) {
+              case 1:
+              for(let i=0;i<8;i++){
+                if (i % 4 === 3) continue;
+                let frame = i % 2;
+                for(let k=0;k<30;k++){
+                  let bullet1 = new BasicBullet(
+                    /*enemy*/ this,
+                    /* bullet */ bulletMiddle,
                     /* frame */ frame,
                     /* num */ i,
-                    /* speedMax */ 5,
+                    /* speedMax */ 4,
                     /* speedMin */ 4,
-                    /* angleMax */ 10,
-                    /* angleMin */ -10,
-                    /* startX */ 'random',
+                    /* angleMax */ k * 12 + frame * 6,
+                    /* angleMin */ k * 12 + frame * 6 -3,
+                    /* startX */ 'enemy',
+                    /* startY */ 'enemy',
+                    /* acceleration */ 1
+                  );
+                  this.bullets.push(bullet1);
+                }
+              }
+                break;
+              case 2:
+              for(i = 0; i < 90; i++){
+                if(i % 18 === 0){
+                  for(k = 0; k < 3; k++){
+                    let bullet2 = new BasicBullet(
+                      /*enemy*/ this,
+                      /* bullet */ bulletLarge,
+                      /* frame */ 0,
+                      /* num */ i,
+                      /* speedMax */ 5,
+                      /* speedMin */ 5,
+                      /* angleMax */ (k - 1)*20,
+                      /* angleMin */ (k - 1)*20,
+                      /* startX */ 'enemy',
+                      /* startY */ 'enemy',
+                      /* acceleration */ 1
+                    );
+                    this.bullets.push(bullet2);
+                  }
+                }
+                let frame = i % 4;
+                let bullet2 = new BasicBullet(
+                  /*enemy*/ this,
+                  /* bullet */ bulletSmall,
+                  /* frame */ frame,
+                  /* num */ i,
+                  /* speedMax */ 5,
+                  /* speedMin */ 4,
+                  /* angleMax */ 10,
+                  /* angleMin */ -10,
+                  /* startX */ 'random',
+                  /* startY */ 10,
+                  /* acceleration */ 1
+                );
+                this.bullets.push(bullet2);
+              }
+                break;
+              case 3:
+              for(i = 0; i < 15; i++){
+                for(k = 0; k < 10; k++){
+                  if(i % 5 === 0){
+                    let frame = k % 4;
+                    let bullet3 = new BasicBullet(
+                      /*enemy*/ this,
+                      /* bullet */ bulletLarge,
+                      /* frame */ frame,
+                      /* num */ i,
+                      /* speedMax */ 2,
+                      /* speedMin */ 2,
+                      /* angleMax */ 90 - 180 * (k%2),
+                      /* angleMin */ 90 - 180 * (k%2),
+                      /* startX */ 20 - 50 + 550 * (k%2),
+                      /* startY */ 60 + k * 62,
+                      /* acceleration */ 1
+                    );
+                    this.bullets.push(bullet3);
+                  }
+                  let frame = k % 4;
+                  let bullet3 = new BasicBullet(
+                    /*enemy*/ this,
+                    /* Bullet */ bulletSmall,
+                    /* frame */ frame,
+                    /* num */ i,
+                    /* speedMax */ 3,
+                    /* speedMin */ 3,
+                    /* angleMax */ 0,
+                    /* angleMin */ 0,
+                    /* startX */ k * 50 + 30,
                     /* startY */ 10,
                     /* acceleration */ 1
                   );
-                  enemy.bullets.push(bullet2);
+                  this.bullets.push(bullet3);
                 }
               }
-              if ((phaseNum === 2)&&(this.life / enemyLife < 1/3)){
-                phaseNum = 3;
-                phaseStartAge = this.age;
-                enemy.bullets = [];
-                for(i = 0; i < 15; i++){
-                  for(k = 0; k < 10; k++){
-                    if(i % 5 === 0){
-                      let frame = k % 4;
-                      let bullet3 = new BasicBullet(
-                        /* bullet */ bulletLarge,
-                        /* frame */ frame,
-                        /* num */ i,
-                        /* speedMax */ 2,
-                        /* speedMin */ 2,
-                        /* angleMax */ 90 - 180 * (k%2),
-                        /* angleMin */ 90 - 180 * (k%2),
-                        /* startX */ 20 - 50 + 550 * (k%2),
-                        /* startY */ 60 + k * 62,
-                        /* acceleration */ 1
-                      );
-                      enemy.bullets.push(bullet3);
-                    }
-                    let frame = k % 4;
-                    let bullet3 = new BasicBullet(
-                      /* Bullet */ bulletSmall,
-                      /* frame */ frame,
-                      /* num */ i,
-                      /* speedMax */ 3,
-                      /* speedMin */ 3,
-                      /* angleMax */ 0,
-                      /* angleMin */ 0,
-                      /* startX */ k * 50 + 30,
-                      /* startY */ 10,
-                      /* acceleration */ 1
-                    );
-                    enemy.bullets.push(bullet3);
-                  }
-                }
-              }
-              if ((phaseNum === 3)&&(this.life === 0)){
-                phaseNum = 10;
-                phaseStartAge = this.age;
-                enemy.bullets = [];
-              }
-
-              if(phaseNum === 1){
-                bulletNum = Math.floor((this.age-phaseStartAge)/30) % 8;
-              }
-              if(phaseNum === 2){
-                bulletNum = Math.floor((this.age-phaseStartAge)/5) % 90;
-              }
-              if(phaseNum === 3){
-                bulletNum = Math.floor((this.age-phaseStartAge)/30) % 15;
-              }
-            });
+                break;
+              default:
+              //撃破処理
+                this.deathSe.play()
+                this.x = enemyPlace.x;
+                this.y = enemyPlace.y;
+                this.tl.delay(90).exec(this.scene.clearGame);
+                break;
+            }
+            for(i=0;i < this.bullets.length;i++){
+              bulletGroup.addChild(this.bullets[i]);
+            }
           }
         });
 
@@ -324,6 +356,7 @@ window.onload = function() {
             this.life = playerLife;
             this.deathSe = core.assets['sound/hidan.wav'].clone();
             this.frame = 12;
+            this.scene = scene;
             let startAge = this.age;  //無敵時間用
             let movePermission = true;  //移動有効/無効
             let shotPermission = true;
@@ -359,7 +392,7 @@ window.onload = function() {
                     this.x = playersPlace.x;
                     this.y = playersPlace.y;
                     this.speed = 0;
-                    enemy.life--;
+                    if(!enemyInvincible) enemy.life--;
                     if (enemy.life <= 0) enemy.life = 0;
                   }
                   // 待機中かつボタン入力でショット
@@ -388,7 +421,7 @@ window.onload = function() {
               shotGroup[i] = new ShotGroup(i, this, scene);
             }
 
-            scene.addChild(this);
+            this.scene.addChild(this);
             // プレイヤーのループ処理
             this.on('enterframe', function () {
               this.frame = Math.floor(this.age/4) % 4 + 12;
@@ -397,8 +430,7 @@ window.onload = function() {
               if (((this.age - startAge) / core.fps >= deathTime)&&
                  (this.x === playersPlace.x)){
                 if ((this.life) <= 0) { //GAMEOVER判定
-                  removeAllChild(scene);
-                  let gameOverScene = new GameOverScene();
+                  this.scene.gameOver();
                 }
                 this.x = defaultPosition.x;
                 this.y = defaultPosition.y; //画面外の自機を戻す
@@ -504,21 +536,11 @@ window.onload = function() {
         const quitKeyLabel = new templateLabel('やめる：Q', 540, 560);
         this.addChild(quitKeyLabel);
 
-        //ポーズシーン作成
-
 
         core.replaceScene(this);
         // GamePlaySceneのループ処理
         let pre = true;
-        let prePhase = 0;
         this.on('enterframe', function() {
-          // クリア判定
-          if (enemy.death){
-            if ((this.age - enemy.death) / core.fps >= 3){
-              removeAllChild(this);
-              let gameClearScene = new GameClearScene();
-            }
-          }
           //ポーズ
           if (core.input.space){
             if (!pre){
@@ -541,18 +563,17 @@ window.onload = function() {
           if (enemy.life/enemyLife <= 0.2){
             lifeBar.backgroundColor = 'yellow';
           }
-
-          //弾幕更新
-          if (phaseNum !== prePhase){
-            removeAllChild(bulletGroup);
-            for(i=0;i < enemy.bullets.length;i++){
-              bulletGroup.addChild(enemy.bullets[i]);
-            }
-          }
-
-          prePhase = phaseNum;
         });
+      },
+      clearGame: function(){
+        removeAllChild(this);
+        let gameClearScene = new GameClearScene();
+      },
+      gameOver: function(){
+        removeAllChild(this);
+        let gameOverScene = new GameOverScene();
       }
+
     });
 
     const GameClearScene = Class.create(Scene, {
