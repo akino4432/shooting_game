@@ -233,14 +233,16 @@ window.onload = function() {
             });
           },
           moveToDefaultPosition: function(){
-            this.tl.moveTo(enemyDefaultPosition.x, enemyDefaultPosition.y, 30, enchant.Easing.easeOutQuart)
-                    .exec(this.phaseJunction);
+            this.tl.clear();
+            this.tl.moveTo(enemyDefaultPosition.x, enemyDefaultPosition.y, 30, enchant.Easing.QUAD_EASEOUT)
+                   .exec(this.phaseJunction);
           },
           phaseJunction: function(){
             this.enemyInterval = false;
             this.phaseNum++;
             this.phaseStartAge = this.age;
             this.bullets = [];
+            this.tl.clear();
             switch (this.phaseNum) {
               case 1:
               for(let i=0;i<8;i++){
@@ -265,41 +267,42 @@ window.onload = function() {
               }
                 break;
               case 2:
-              for(i = 0; i < 90; i++){
-                if(i % 18 === 0){
-                  for(k = 0; k < 3; k++){
-                    let bullet2 = new BasicBullet(
-                      /*enemy*/ this,
-                      /* bullet */ bulletLarge,
-                      /* frame */ 0,
-                      /* num */ i,
-                      /* speedMax */ 5,
-                      /* speedMin */ 5,
-                      /* angleMax */ (k - 1)*20,
-                      /* angleMin */ (k - 1)*20,
-                      /* startX */ 'enemy',
-                      /* startY */ 'enemy',
-                      /* acceleration */ 1
-                    );
-                    this.bullets.push(bullet2);
+                this.tl.delay(90).moveX(395, 60).delay(60).moveX(95, 60).loop()
+                for(i = 0; i < 90; i++){
+                  if(i % 18 === 0){
+                    for(k = 0; k < 3; k++){
+                      let bullet2 = new BasicBullet(
+                        /*enemy*/ this,
+                        /* bullet */ bulletLarge,
+                        /* frame */ 0,
+                        /* num */ i,
+                        /* speedMax */ 5,
+                        /* speedMin */ 5,
+                        /* angleMax */ (k - 1)*20,
+                        /* angleMin */ (k - 1)*20,
+                        /* startX */ 'enemy',
+                        /* startY */ 'enemy',
+                        /* acceleration */ 1
+                      );
+                      this.bullets.push(bullet2);
+                    }
                   }
+                  let frame = i % 4;
+                  let bullet2 = new BasicBullet(
+                    /*enemy*/ this,
+                    /* bullet */ bulletSmall,
+                    /* frame */ frame,
+                    /* num */ i,
+                    /* speedMax */ 5,
+                    /* speedMin */ 4,
+                    /* angleMax */ 10,
+                    /* angleMin */ -10,
+                    /* startX */ 'random',
+                    /* startY */ 10,
+                    /* acceleration */ 1
+                  );
+                  this.bullets.push(bullet2);
                 }
-                let frame = i % 4;
-                let bullet2 = new BasicBullet(
-                  /*enemy*/ this,
-                  /* bullet */ bulletSmall,
-                  /* frame */ frame,
-                  /* num */ i,
-                  /* speedMax */ 5,
-                  /* speedMin */ 4,
-                  /* angleMax */ 10,
-                  /* angleMin */ -10,
-                  /* startX */ 'random',
-                  /* startY */ 10,
-                  /* acceleration */ 1
-                );
-                this.bullets.push(bullet2);
-              }
                 break;
               case 3:
               for(i = 0; i < 15; i++){
