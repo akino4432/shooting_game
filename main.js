@@ -67,7 +67,7 @@ window.onload = function() {
                                       'y': fourCoordinates.y1 + 60};
 
         const playerLife = 3;
-        const enemyLife = 600;
+        const enemyLife = 300;
         let collision = false;
         let phaseNum = 0;
 
@@ -106,10 +106,14 @@ window.onload = function() {
             this.deathSe = core.assets['sound/attack3.mp3'].clone();
             this.bullets = [];
 
+            const bulletSmall = {'width': 16, 'height': 16, 'imgName': 'img/bullet1.png', 'collisionDetection': 4};
+            const bulletMiddle = {'width': 32, 'height': 32, 'imgName': 'img/bullet2.png', 'collisionDetection': 8};
+            const bulletLarge = {'width': 50, 'height': 50, 'imgName': 'img/bullet3.png', 'collisionDetection': 15};
+
             const Bullet = Class.create(Sprite, {
-              initialize: function(width, height, imgName, frame, collisionDetection, num){
-                Sprite.call(this, width, height);
-                this.image = core.assets[imgName];
+              initialize: function(bullet, frame, num){
+                Sprite.call(this, bullet.width, bullet.height);
+                this.image = core.assets[bullet.imgName];
                 this.frame = frame;
                 this.num = num;
                 this.x = enemyPlace.x;
@@ -118,7 +122,7 @@ window.onload = function() {
                 this.outside = 20;  //画面外の、弾がなくならない範囲
                 this.on('enterframe', function(){
                   //当たり判定
-                  if (this.within(player, playerCollisionDetection+collisionDetection)){
+                  if (this.within(player, playerCollisionDetection + bullet.collisionDetection)){
                     collision = true;
                   }
                   // 画面外処理
@@ -142,10 +146,10 @@ window.onload = function() {
             });
 
             const BasicBullet = Class.create(Bullet, {
-              initialize: function(width, height, imgName, frame, collisionDetection, num,
+              initialize: function(bullet, frame, num,
                                    speedMax, speedMin, angleMax, angleMin,
                                    startX=null, startY=null, acceleration = 1){
-                Bullet.call(this, width, height, imgName, frame, collisionDetection, num);
+                Bullet.call(this, bullet, frame, num);
                 this.angle = 0;
                 if (startX === null) startX = this.enemyPosition().x;
                 if (startY === null) startY = this.enemyPosition().y;
@@ -200,11 +204,8 @@ window.onload = function() {
                   let frame = i % 2;
                   for(let k=0;k<30;k++){
                     let bullet1 = new BasicBullet(
-                      /* width */ 32,
-                      /* height */ 32,
-                      /* imageName */ 'img/bullet2.png',
+                      /* bullet */ bulletMiddle,
                       /* frame */ frame,
-                      /* collisionDetection */ 8,
                       /* num */ i,
                       /* speedMax */ 4,
                       /* speedMin */ 4,
@@ -226,11 +227,8 @@ window.onload = function() {
                   if(i % 18 === 0){
                     for(k = 0; k < 3; k++){
                       let bullet2 = new BasicBullet(
-                        /* width */ 50,
-                        /* height */ 50,
-                        /* imageName */ 'img/bullet3.png',
+                        /* bullet */ bulletLarge,
                         /* frame */ 0,
-                        /* collisionDetection */ 15,
                         /* num */ i,
                         /* speedMax */ 5,
                         /* speedMin */ 5,
@@ -245,11 +243,8 @@ window.onload = function() {
                   }
                   let frame = i % 4;
                   let bullet2 = new BasicBullet(
-                    /* width */ 16,
-                    /* height */ 16,
-                    /* imageName */ 'img/bullet1.png',
+                    /* bullet */ bulletSmall,
                     /* frame */ frame,
-                    /* collisionDetection */ 4,
                     /* num */ i,
                     /* speedMax */ 5,
                     /* speedMin */ 4,
@@ -271,11 +266,8 @@ window.onload = function() {
                     if(i % 5 === 0){
                       let frame = k % 4;
                       let bullet3 = new BasicBullet(
-                        /* width */ 50,
-                        /* height */ 50,
-                        /* imageName */ 'img/bullet3.png',
+                        /* bullet */ bulletLarge,
                         /* frame */ frame,
-                        /* collisionDetection */ 15,
                         /* num */ i,
                         /* speedMax */ 2,
                         /* speedMin */ 2,
@@ -289,11 +281,8 @@ window.onload = function() {
                     }
                     let frame = k % 4;
                     let bullet3 = new BasicBullet(
-                      /* width */ 16,
-                      /* height */ 16,
-                      /* imageName */ 'img/bullet1.png',
+                      /* Bullet */ bulletSmall,
                       /* frame */ frame,
-                      /* collisionDetection */ 4,
                       /* num */ i,
                       /* speedMax */ 3,
                       /* speedMin */ 3,
@@ -306,6 +295,11 @@ window.onload = function() {
                     enemy.bullets.push(bullet3);
                   }
                 }
+              }
+              if ((phaseNum === 3)&&(this.life === 0)){
+                phaseNum = 10;
+                phaseStartAge = this.age;
+                enemy.bullets = [];
               }
 
               if(phaseNum === 1){
