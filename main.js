@@ -144,9 +144,14 @@ window.onload = function() {
             if (startY === 'enemy') this.startYType =  'enemy';
             if (startX === 'random') this.startXType =  'random';
             if (startY === 'random') this.startYType =  'random';
+            let preNum = 0;
+            let bulletPermission = true;
             this.on('enterframe', function(){
+              // bulletNumが切り替わると許可
+              if(preNum !== this.enemy.bulletNum) bulletPermission = true;
+              preNum = this.enemy.bulletNum;
               //待機中かつ順番
-              if ((this.y === enemyPlace.y)&&(this.enemy.bulletNum === this.num)){
+              if ((bulletPermission)&&(this.y === enemyPlace.y)&&(this.enemy.bulletNum === this.num)){
                 if (this.startXType === 'enemy') startX = this.enemyPosition().x;
                 if (this.startYType === 'enemy') startY = this.enemyPosition().y;
                 if (this.startXType === 'random') startX = Math.floor(Math.random() *
@@ -157,6 +162,7 @@ window.onload = function() {
                 this.y = startY;
                 this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
                 this.angle = Math.floor(Math.random() * (angleMax-angleMin))+angleMin;
+                bulletPermission = false; //1ループで1射のみ
               }
               this.speed *= acceleration;
               this.x += this.speed*Math.sin(this.angle/180*Math.PI);
