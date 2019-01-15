@@ -67,7 +67,7 @@ window.onload = function() {
                                       'y': fourCoordinates.y1 + 60};
 
         const playerLife = 3;
-        const enemyLife = 300;
+        const enemyLife = 1000;
         let collision = false;
         let enemyInvincible = false;
 
@@ -196,6 +196,9 @@ window.onload = function() {
             })
           },
           playerAngle: function(){
+            if(player.x === playersPlace.x){
+              return 0;
+            }
             return Math.atan2(player.x-this.x, player.y-this.y);
           }
         });
@@ -231,21 +234,31 @@ window.onload = function() {
               }
 
               //phase分岐
-              if ((this.phaseNum === 0)&&(this.life / enemyLife >= 2/3)&&(!this.enemyInterval)){
+              if ((this.phaseNum === 0)&&(this.life / enemyLife >= 4/5)&&(!this.enemyInterval)){
                 this.enemyInterval = true;
                 this.moveToDefaultPosition();
               }
-              if ((this.phaseNum === 1)&&(this.life / enemyLife < 2/3)&&(!this.enemyInterval)){
+              if ((this.phaseNum === 1)&&(this.life / enemyLife < 4/5)&&(!this.enemyInterval)){
                 removeAllChild(bulletGroup);
                 this.enemyInterval = true;
                 this.moveToDefaultPosition();
               }
-              if ((this.phaseNum === 2)&&(this.life / enemyLife < 1/3)&&(!this.enemyInterval)){
+              if ((this.phaseNum === 2)&&(this.life / enemyLife < 3/5)&&(!this.enemyInterval)){
                 removeAllChild(bulletGroup);
                 this.enemyInterval = true;
                 this.moveToDefaultPosition();
               }
-              if ((this.phaseNum === 3)&&(this.life === 0)){
+              if ((this.phaseNum === 3)&&(this.life / enemyLife < 2/5)&&(!this.enemyInterval)){
+                removeAllChild(bulletGroup);
+                this.enemyInterval = true;
+                this.moveToDefaultPosition();
+              }
+              if ((this.phaseNum === 4)&&(this.life / enemyLife < 1/5)&&(!this.enemyInterval)){
+                removeAllChild(bulletGroup);
+                this.enemyInterval = true;
+                this.moveToDefaultPosition();
+              }
+              if ((this.phaseNum === 5)&&(this.life === 0)){
                 removeAllChild(bulletGroup);
                 this.phaseJunction();
               }
@@ -258,6 +271,12 @@ window.onload = function() {
               }
               if(this.phaseNum === 3){
                 this.bulletNum = Math.floor((this.age-this.phaseStartAge)/30) % 15;
+              }
+              if(this.phaseNum === 4){
+                this.bulletNum = Math.floor((this.age-this.phaseStartAge)/1) % 180;
+              }
+              if(this.phaseNum === 5){
+                this.bulletNum = Math.floor((this.age-this.phaseStartAge)/3) % 72;
               }
             });
           },
@@ -398,6 +417,79 @@ window.onload = function() {
                   this.bullets.push(bullet3);
                 }
               }
+                break;
+              case 4:
+                for(i = 0; i< 180; i++){
+                  let bullet;
+                  if(i % 15 === 14){
+                    bullet = bulletLarge;
+                  } else if (i % 4 === 3){
+                    bullet = bulletMiddle;
+                  } else {
+                    bullet = bulletSmall;
+                  }
+                  let bullet4 = new BasicBullet(
+                    /*enemy*/ this,
+                    /* bullet */ bullet,
+                    /* frame */ 1,
+                    /* num */ i,
+                    /* speedMax */ 5,
+                    /* speedMin */ 1,
+                    /* angleMax */ 200,
+                    /* angleMin */ 160,
+                    /* playerAiming */ false,
+                    /* startX */ 'random',
+                    /* startY */ 'enemy',
+                    /* acceleration */ 0.12,
+                    /* accelDirection */ 'y'
+                  );
+                  this.bullets.push(bullet4);
+                }
+                break;
+              case 5:
+                for(i = 0;i < 72; i++){
+                  if(Math.floor(i/8) % 3 !== 2){
+                    let bullet5 = new BasicBullet(
+                      /*enemy*/ this,
+                      /* bullet */ bulletMiddle,
+                      /* frame */ 0,
+                      /* num */ i,
+                      /* speedMax */ 5,
+                      /* speedMin */ 5,
+                      /* angleMax */ 0,
+                      /* angleMin */ 0,
+                      /* playerAiming */ true,
+                      /* startX */ 'enemy',
+                      /* startY */ 'enemy',
+                      /* acceleration */ 0,
+                      /* accelDirection */ null
+                    );
+                    this.bullets.push(bullet5);
+                  }
+                  if(i % 6 === 0){
+                    for(k = 0;k < 30; k++){
+                      let frame = (i % 12 === 0) ? 2: 3;
+                      let acceleration = (i % 12 === 0) ? 0.008: -0.008;
+                      let angleDiff = (i % 12 === 0) ? i / 6: -i / 6;
+                      let bullet5 = new BasicBullet(
+                        /*enemy*/ this,
+                        /* bullet */ bulletLarge,
+                        /* frame */ frame,
+                        /* num */ i,
+                        /* speedMax */ 4,
+                        /* speedMin */ 4,
+                        /* angleMax */ k * 12 + angleDiff,
+                        /* angleMin */ k * 12 + angleDiff,
+                        /* playerAiming */ false,
+                        /* startX */ 'enemy',
+                        /* startY */ 'enemy',
+                        /* acceleration */ acceleration,
+                        /* accelDirection */ 'circle'
+                      );
+                      this.bullets.push(bullet5);
+                    }
+                  }
+                }
                 break;
               default:
               //撃破処理
