@@ -183,6 +183,10 @@ window.onload = function() {
                 this.speedY += this.acceleration;
                 this.x += this.speedX;
                 this.y += this.speedY;
+              } else if (accelDirection === 'circle') {
+                this.angle += this.acceleration;
+                this.x += this.speed*Math.sin(this.angle);
+                this.y += this.speed*Math.cos(this.angle);
               } else {
                 this.speed += this.acceleration;
                 this.x += this.speed*Math.sin(this.angle);
@@ -324,12 +328,12 @@ window.onload = function() {
                     /* num */ i,
                     /* speedMax */ 5,
                     /* speedMin */ 4,
-                    /* angleMax */ 10,
-                    /* angleMin */ -10,
+                    /* angleMax */ 20,
+                    /* angleMin */ -20,
                     /* playerAiming */ false,
                     /* startX */ 'random',
                     /* startY */ 10,
-                    /* acceleration */ 0.1,
+                    /* acceleration */ 0,
                     /* accelDirection */ null
                   );
                   this.bullets.push(bullet2);
