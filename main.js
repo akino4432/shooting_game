@@ -107,6 +107,9 @@ window.onload = function() {
             this.x = enemyPlace.x;
             this.y = enemyPlace.y;
             this.speed = 0;
+            this.speedX = 0;
+            this.speedY = 0;
+            this.acceleration = 0;
             this.enemy = enemy;
             this.outside = 20;  //画面外の、弾がなくならない範囲
             this.on('enterframe', function(){
@@ -115,12 +118,15 @@ window.onload = function() {
                 collision = true;
               }
               // 画面外処理
-              if (this.speed !== 0){
+              if ((this.speed !== 0)||(this.speedX !== 0)||(this.speedX !== 0)){
                 if ((this.x <= 0 - this.width - this.outside)||
                    (this.x >= playScreenSize.x + this.outside)||
                    (this.y <= 0 - this.height - this.outside)||
                    (this.y >= playScreenSize.y + this.outside)){
                      this.speed = 0;
+                     this.speedX = 0;
+                     this.speedY = 0;
+                     this.acceleration = 0;
                      this.x = enemyPlace.x;
                      this.y = enemyPlace.y;
                    }
@@ -137,14 +143,14 @@ window.onload = function() {
         const BasicBullet = Class.create(Bullet, {
           initialize: function(enemy, bullet, frame, num,
                                speedMax, speedMin, angleMax, angleMin, playerAiming = false,
-                               startX='enemy', startY='enemy', acceleration = 1){
+                               startX='enemy', startY='enemy', acceleration = 0, accelDirection = null){
             Bullet.call(this, enemy, bullet, frame, num);
             this.angle = 0;
             this.playerAiming = playerAiming;
-            if (startX === 'enemy') this.startXType =  'enemy';
-            if (startY === 'enemy') this.startYType =  'enemy';
-            if (startX === 'random') this.startXType =  'random';
-            if (startY === 'random') this.startYType =  'random';
+            if (startX === 'enemy') this.startXType = 'enemy';
+            if (startY === 'enemy') this.startYType = 'enemy';
+            if (startX === 'random') this.startXType = 'random';
+            if (startY === 'random') this.startYType = 'random';
             let preNum = 0;
             let bulletPermission = true;
             this.on('enterframe', function(){
@@ -153,7 +159,6 @@ window.onload = function() {
               preNum = this.enemy.bulletNum;
               //待機中かつ順番
               if ((bulletPermission)&&(this.y === enemyPlace.y)&&(this.enemy.bulletNum === this.num)){
-                this.angle = (this.playerAiming) ? this.playerAngle() : 0;
                 if (this.startXType === 'enemy') startX = this.enemyPosition().x;
                 if (this.startYType === 'enemy') startY = this.enemyPosition().y;
                 if (this.startXType === 'random') startX = Math.floor(Math.random() *
@@ -162,17 +167,32 @@ window.onload = function() {
                                                            (playScreenSize.y+this.height))+20-this.height;
                 this.x = startX;
                 this.y = startY;
-                this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
+                this.angle = (this.playerAiming) ? this.playerAngle() : 0;
                 this.angle += (Math.floor(Math.random() * (angleMax-angleMin))+angleMin)/180*Math.PI;
+                this.speed = Math.floor(Math.random() * (speedMax-speedMin))+speedMin;
+                this.speedX = this.speed*Math.sin(this.angle);
+                this.speedY = this.speed*Math.cos(this.angle);
+                this.acceleration = acceleration;
                 bulletPermission = false; //1ループで1射のみ
               }
-              this.speed *= acceleration;
-              this.x += this.speed*Math.sin(this.angle);
-              this.y += this.speed*Math.cos(this.angle);
+              if (accelDirection === 'x'){
+                this.speedX += this.acceleration;
+                this.x += this.speedX;
+                this.y += this.speedY;
+              } else if (accelDirection === 'y') {
+                this.speedY += this.acceleration;
+                this.x += this.speedX;
+                this.y += this.speedY;
+              } else {
+                this.speed += this.acceleration;
+                this.x += this.speed*Math.sin(this.angle);
+                this.y += this.speed*Math.cos(this.angle);
+              }
+
             })
           },
           playerAngle: function(){
-            return Math.atan2(player.x-this.enemy.x, player.y-this.enemy.y);
+            return Math.atan2(player.x-this.x, player.y-this.y);
           }
         });
 
@@ -266,7 +286,8 @@ window.onload = function() {
                     /* playerAiming */ false,
                     /* startX */ 'enemy',
                     /* startY */ 'enemy',
-                    /* acceleration */ 1
+                    /* acceleration */ 0,
+                    /* accelDirection */ null
                   );
                   this.bullets.push(bullet1);
                 }
@@ -289,7 +310,8 @@ window.onload = function() {
                         /* playerAiming */ true,
                         /* startX */ 'enemy',
                         /* startY */ 'enemy',
-                        /* acceleration */ 1
+                        /* acceleration */ 0,
+                        /* accelDirection */ null
                       );
                       this.bullets.push(bullet2);
                     }
@@ -307,13 +329,32 @@ window.onload = function() {
                     /* playerAiming */ false,
                     /* startX */ 'random',
                     /* startY */ 10,
-                    /* acceleration */ 1
+                    /* acceleration */ 0.1,
+                    /* accelDirection */ null
                   );
                   this.bullets.push(bullet2);
                 }
                 break;
               case 3:
               for(i = 0; i < 15; i++){
+                if(i % 3 === 2){
+                  let bullet3 = new BasicBullet(
+                    /*enemy*/ this,
+                    /* bullet */ bulletMiddle,
+                    /* frame */ 0,
+                    /* num */ i,
+                    /* speedMax */ 5,
+                    /* speedMin */ 5,
+                    /* angleMax */ 0,
+                    /* angleMin */ 0,
+                    /* playerAiming */ true,
+                    /* startX */ 'enemy',
+                    /* startY */ 'enemy',
+                    /* acceleration */ 0,
+                    /* accelDirection */ null
+                  );
+                  this.bullets.push(bullet3);
+                }
                 for(k = 0; k < 10; k++){
                   if(i % 5 === 0){
                     let frame = k % 4;
@@ -329,7 +370,8 @@ window.onload = function() {
                       /* playerAiming */ false,
                       /* startX */ 20 - 50 + 550 * (k%2),
                       /* startY */ 60 + k * 62,
-                      /* acceleration */ 1
+                      /* acceleration */ 0,
+                      /* accelDirection */ null
                     );
                     this.bullets.push(bullet3);
                   }
@@ -346,7 +388,8 @@ window.onload = function() {
                     /* playerAiming */ false,
                     /* startX */ k * 50 + 30,
                     /* startY */ 10,
-                    /* acceleration */ 1
+                    /* acceleration */ 0,
+                    /* accelDirection */ null
                   );
                   this.bullets.push(bullet3);
                 }
