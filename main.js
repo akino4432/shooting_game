@@ -11,7 +11,7 @@ window.onload = function() {
   core.keybind(81, "q");
   core.keybind(32, "space");
   core.preload('img/bullet1.png','img/batt.png', 'img/playscreen.png', 'img/shot1.png',
-               'img/snake.png', 'img/star.png','img/bullet2.png','img/bullet3.png',
+               'img/snake.png', 'img/star.png','img/bullet2.png','img/bullet3.png', 'img/background.png',
                'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav', 'sound/dumping.mp3',
                'sound/bgm_maoudamashii_neorock73.mp3');
   core.onload = function() {
@@ -50,6 +50,7 @@ window.onload = function() {
         Scene.call(this);
         this.backgroundColor = 'black';
         this.bgm = core.assets['sound/bgm_maoudamashii_neorock73.mp3'].clone();
+        const backgroundImageSize = {'x': 500, 'y': 1320}
         const playerSize = 51;
         const playersPlace = {'x': -100, 'y': -100};
         const shotSize = {'x': 20, 'y': 60};
@@ -72,6 +73,15 @@ window.onload = function() {
         const enemyLife = 100;
         let collision = false;
         let enemyInvincible = false;
+
+        const background = new Sprite(backgroundImageSize.x, backgroundImageSize.y);
+        background.image = core.assets['img/background.png'];
+        background.x = fourCoordinates.x1
+        background.y = fourCoordinates.y1
+        background.tl.moveTo(fourCoordinates.x1, fourCoordinates.y1-playScreenSize.y, 60)
+                     .moveTo(fourCoordinates.x1, fourCoordinates.y1, 1)
+                     .loop();
+        this.addChild(background);
 
         const PauseScene = Class.create(Scene, {
           initialize: function(scene) {
