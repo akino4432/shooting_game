@@ -10,9 +10,10 @@ window.onload = function() {
   core.keybind(90, "y");
   core.keybind(81, "q");
   core.keybind(32, "space");
-  core.preload('img/bullet1.png','img/boss_vermiena.png', 'img/playscreen.png', 'img/shot1.png',
+  core.preload('img/bullet1.png','img/batt.png', 'img/playscreen.png', 'img/shot1.png',
                'img/snake.png', 'img/star.png','img/bullet2.png','img/bullet3.png',
-               'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav');
+               'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav', 'sound/dumping.mp3',
+               'sound/bgm_maoudamashii_neorock73.mp3');
   core.onload = function() {
     //シーン
     const GameStartScene = Class.create(Scene, {
@@ -48,6 +49,7 @@ window.onload = function() {
       initialize: function() {
         Scene.call(this);
         this.backgroundColor = 'black';
+        this.bgm = core.assets['sound/bgm_maoudamashii_neorock73.mp3'].clone();
         const playerSize = 51;
         const playersPlace = {'x': -100, 'y': -100};
         const shotSize = {'x': 20, 'y': 60};
@@ -67,7 +69,7 @@ window.onload = function() {
                                       'y': fourCoordinates.y1 + 60};
 
         const playerLife = 3;
-        const enemyLife = 1000;
+        const enemyLife = 100;
         let collision = false;
         let enemyInvincible = false;
 
@@ -99,7 +101,7 @@ window.onload = function() {
         const bulletLarge = {'width': 50, 'height': 50, 'imgName': 'img/bullet3.png', 'collisionDetection': 15};
 
         const Bullet = Class.create(Sprite, {
-          initialize: function(enemy, bullet, frame, num){
+          initialize: function(enemy, bullet, frame, num, se){
             Sprite.call(this, bullet.width, bullet.height);
             this.image = core.assets[bullet.imgName];
             this.frame = frame;
@@ -112,6 +114,12 @@ window.onload = function() {
             this.acceleration = 0;
             this.enemy = enemy;
             this.outside = 20;  //画面外の、弾がなくならない範囲
+            this.se = se;
+            if(this.se === true) {
+              this.bulletSe = core.assets['sound/dumping.mp3'].clone();
+            } else {
+              this.bulletSe = null;
+            }
             this.on('enterframe', function(){
               //当たり判定
               if (this.within(player, playerCollisionDetection + bullet.collisionDetection)){
@@ -143,8 +151,8 @@ window.onload = function() {
         const BasicBullet = Class.create(Bullet, {
           initialize: function(enemy, bullet, frame, num,
                                speedMax, speedMin, angleMax, angleMin, playerAiming = false,
-                               startX='enemy', startY='enemy', acceleration = 0, accelDirection = null){
-            Bullet.call(this, enemy, bullet, frame, num);
+                               startX='enemy', startY='enemy', acceleration = 0, accelDirection = null, se = false){
+            Bullet.call(this, enemy, bullet, frame, num, se);
             this.angle = 0;
             this.playerAiming = playerAiming;
             if (startX === 'enemy') this.startXType = 'enemy';
@@ -173,6 +181,9 @@ window.onload = function() {
                 this.speedX = this.speed*Math.sin(this.angle);
                 this.speedY = this.speed*Math.cos(this.angle);
                 this.acceleration = acceleration;
+                if (this.se){
+                  this.bulletSe.play();
+                }
                 bulletPermission = false; //1ループで1射のみ
               }
               if (accelDirection === 'x'){
@@ -297,6 +308,7 @@ window.onload = function() {
                 if (i % 4 === 3) continue;
                 let frame = i % 2;
                 for(let k=0;k<30;k++){
+                  let se = (k === 0) ? true: false;
                   let bullet1 = new BasicBullet(
                     /*enemy*/ this,
                     /* bullet */ bulletMiddle,
@@ -310,7 +322,8 @@ window.onload = function() {
                     /* startX */ 'enemy',
                     /* startY */ 'enemy',
                     /* acceleration */ 0,
-                    /* accelDirection */ null
+                    /* accelDirection */ null,
+                    /* se */ se
                   );
                   this.bullets.push(bullet1);
                 }
@@ -321,6 +334,7 @@ window.onload = function() {
                 for(i = 0; i < 90; i++){
                   if(i % 18 === 0){
                     for(k = 0; k < 3; k++){
+                      let se = (k === 0) ? true: false;
                       let bullet2 = new BasicBullet(
                         /*enemy*/ this,
                         /* bullet */ bulletLarge,
@@ -334,7 +348,8 @@ window.onload = function() {
                         /* startX */ 'enemy',
                         /* startY */ 'enemy',
                         /* acceleration */ 0,
-                        /* accelDirection */ null
+                        /* accelDirection */ null,
+                        /* se */ se
                       );
                       this.bullets.push(bullet2);
                     }
@@ -353,7 +368,8 @@ window.onload = function() {
                     /* startX */ 'random',
                     /* startY */ 10,
                     /* acceleration */ 0,
-                    /* accelDirection */ null
+                    /* accelDirection */ null,
+                    /* se */ false
                   );
                   this.bullets.push(bullet2);
                 }
@@ -374,7 +390,8 @@ window.onload = function() {
                     /* startX */ 'enemy',
                     /* startY */ 'enemy',
                     /* acceleration */ 0,
-                    /* accelDirection */ null
+                    /* accelDirection */ null,
+                    /* se */ true
                   );
                   this.bullets.push(bullet3);
                 }
@@ -392,9 +409,10 @@ window.onload = function() {
                       /* angleMin */ 90 - 180 * (k%2),
                       /* playerAiming */ false,
                       /* startX */ 20 - 50 + 550 * (k%2),
-                      /* startY */ 60 + k * 62,
+                      /* startY */ 120 + k * 56,
                       /* acceleration */ 0,
-                      /* accelDirection */ null
+                      /* accelDirection */ null,
+                      /* se */ false
                     );
                     this.bullets.push(bullet3);
                   }
@@ -412,7 +430,8 @@ window.onload = function() {
                     /* startX */ k * 50 + 30,
                     /* startY */ 10,
                     /* acceleration */ 0,
-                    /* accelDirection */ null
+                    /* accelDirection */ null,
+                    /* se */ false
                   );
                   this.bullets.push(bullet3);
                 }
@@ -441,7 +460,8 @@ window.onload = function() {
                     /* startX */ 'random',
                     /* startY */ 'enemy',
                     /* acceleration */ 0.12,
-                    /* accelDirection */ 'y'
+                    /* accelDirection */ 'y',
+                    /* se */ false
                   );
                   this.bullets.push(bullet4);
                 }
@@ -454,15 +474,16 @@ window.onload = function() {
                       /* bullet */ bulletMiddle,
                       /* frame */ 0,
                       /* num */ i,
-                      /* speedMax */ 5,
-                      /* speedMin */ 5,
-                      /* angleMax */ 0,
-                      /* angleMin */ 0,
+                      /* speedMax */ 7,
+                      /* speedMin */ 7,
+                      /* angleMax */ 1,
+                      /* angleMin */ -1,
                       /* playerAiming */ true,
                       /* startX */ 'enemy',
                       /* startY */ 'enemy',
                       /* acceleration */ 0,
-                      /* accelDirection */ null
+                      /* accelDirection */ null,
+                      /* se */ true
                     );
                     this.bullets.push(bullet5);
                   }
@@ -484,7 +505,8 @@ window.onload = function() {
                         /* startX */ 'enemy',
                         /* startY */ 'enemy',
                         /* acceleration */ acceleration,
-                        /* accelDirection */ 'circle'
+                        /* accelDirection */ 'circle',
+                        /* se */ false
                       );
                       this.bullets.push(bullet5);
                     }
@@ -496,7 +518,9 @@ window.onload = function() {
                 this.deathSe.play()
                 this.x = enemyPlace.x;
                 this.y = enemyPlace.y;
-                this.tl.delay(90).exec(this.scene.clearGame);
+                this.tl.delay(90).exec(function(){
+                  clearGame(this.scene);
+                });
                 break;
             }
             for(i=0;i < this.bullets.length;i++){
@@ -508,7 +532,7 @@ window.onload = function() {
         const Player = Class.create(Sprite, {
           initialize: function(scene) {
             Sprite.call(this, playerSize, playerSize);
-            this.image = core.assets['img/boss_vermiena.png'];
+            this.image = core.assets['img/batt.png'];
             this.x = defaultPosition.x;
             this.y = defaultPosition.y;
             this.life = playerLife;
@@ -582,7 +606,7 @@ window.onload = function() {
             this.scene.addChild(this);
             // プレイヤーのループ処理
             this.on('enterframe', function () {
-              this.frame = Math.floor(this.age/4) % 4 + 12;
+              this.frame = Math.floor(this.age/4) % 4;
               //被弾処理ここから
               //死亡時間経過後の処理
               if (((this.age - startAge) / core.fps >= deathTime)&&
@@ -657,6 +681,12 @@ window.onload = function() {
           }
         });
 
+        function clearGame(scene){
+          scene.bgm.stop();
+          removeAllChild(scene);
+          let gameClearScene = new GameClearScene();
+        }
+
         const enemy = new Enemy(this);
 
         const player = new Player(this);
@@ -699,11 +729,13 @@ window.onload = function() {
         // GamePlaySceneのループ処理
         let pre = true;
         this.on('enterframe', function() {
+          this.bgm.play();
           //ポーズ
           if (core.input.space){
             if (!pre){
               pre = true;
               // 手前に表示するため毎回作成
+              this.bgm.pause();
               let pauseScene = new PauseScene();
             }
           } else{
@@ -723,11 +755,8 @@ window.onload = function() {
           }
         });
       },
-      clearGame: function(){
-        removeAllChild(this);
-        let gameClearScene = new GameClearScene();
-      },
       gameOver: function(){
+        this.bgm.stop();
         removeAllChild(this);
         let gameOverScene = new GameOverScene();
       }
