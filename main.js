@@ -9,7 +9,7 @@ window.onload = function() {
   core.keybind(88, "x");
   core.keybind(90, "y");
   core.keybind(81, "q");
-  core.keybind(32, "space");
+  core.keybind(13, "enter");
   core.preload('img/bullet1.png','img/batt.png', 'img/playscreen.png', 'img/shot1.png',
                'img/snake.png', 'img/star.png','img/bullet2.png','img/bullet3.png', 'img/background.png',
                'sound/putting_scissors.mp3', 'sound/attack3.mp3', 'sound/hidan.wav', 'sound/dumping.mp3',
@@ -22,7 +22,7 @@ window.onload = function() {
         this.backgroundColor = 'black';
         const startLabel =  new templateLabel('START', 285, 250, '40px');
         const pressLabel = new templateLabel(
-          'Press SPACE to start.', 255, 400
+          'Press ENTER to start.', 255, 400
         );
 
         this.addChild(startLabel);
@@ -33,7 +33,7 @@ window.onload = function() {
         core.replaceScene(this);
         // GameStartSceneのループ処理
         this.on('enterframe', function() {
-          if (core.input.space) {
+          if (core.input.enter) {
             if (!pre) {
               removeAllChild(this);
               let gamePlayScene = new GamePlayScene();
@@ -70,16 +70,16 @@ window.onload = function() {
                                       'y': fourCoordinates.y1 + 60};
 
         const playerLife = 3;
-        const enemyLife = 100;
+        const enemyLife = 1000;
         let collision = false;
         let enemyInvincible = false;
 
         const background = new Sprite(backgroundImageSize.x, backgroundImageSize.y);
         background.image = core.assets['img/background.png'];
         background.x = fourCoordinates.x1
-        background.y = fourCoordinates.y1
-        background.tl.moveTo(fourCoordinates.x1, fourCoordinates.y1-playScreenSize.y, 60)
-                     .moveTo(fourCoordinates.x1, fourCoordinates.y1, 1)
+        background.y = fourCoordinates.y1-playScreenSize.y
+        background.tl.moveTo(fourCoordinates.x1, fourCoordinates.y1, 60)
+                     .moveTo(fourCoordinates.x1, fourCoordinates.y1-playScreenSize.y, 1)
                      .loop();
         this.addChild(background);
 
@@ -89,12 +89,12 @@ window.onload = function() {
             this.backgroundColor = 'rgba(255, 255, 255, 0.2)'
             const pauseLabel = new templateLabel('PAUSE', 280, 280, '30px');
             const restartLabel = new templateLabel(
-              'Press SPACE to restart.', 230, 380);
+              'Press ENTER to restart.', 230, 380);
             this.addChild(pauseLabel);
             this.addChild(restartLabel);
             core.pushScene(this);
             this.on('enterframe', function(){
-              if (core.input.space){
+              if (core.input.enter){
                 if (!pre){
                   pre = true
                   core.popScene();
@@ -729,7 +729,7 @@ window.onload = function() {
         this.addChild(shotKeyLabel);
         const lowKeyLabel = new templateLabel('低速移動：Z', 540, 480);
         this.addChild(lowKeyLabel);
-        const pauseKeyLabel = new templateLabel('ポーズ：SPACE', 540, 520);
+        const pauseKeyLabel = new templateLabel('ポーズ：ENTER', 540, 520);
         this.addChild(pauseKeyLabel);
         const quitKeyLabel = new templateLabel('やめる：Q', 540, 560);
         this.addChild(quitKeyLabel);
@@ -741,7 +741,7 @@ window.onload = function() {
         this.on('enterframe', function() {
           this.bgm.play();
           //ポーズ
-          if (core.input.space){
+          if (core.input.enter){
             if (!pre){
               pre = true;
               // 手前に表示するため毎回作成
@@ -782,7 +782,7 @@ window.onload = function() {
           'Thank you for playing!', 260, 390
         );
         const pressLabel = new templateLabel(
-          'Press SPACE to back to the menu.', 205, 500
+          'Press ENTER to back to the menu.', 205, 500
         );
         pressLabel.width = 500;
 
@@ -795,7 +795,7 @@ window.onload = function() {
         core.replaceScene(this);
         // GameClearSceneのループ処理
         this.on('enterframe', function() {
-          if (core.input.space) {
+          if (core.input.enter) {
             if (!pre) {
               removeAllChild(this);
               let gameStartScene = new GameStartScene();
@@ -813,7 +813,7 @@ window.onload = function() {
         this.backgroundColor = 'black';
         const gameOverLabel =  new templateLabel('GAME OVER', 235, 280, '40px');
         const pressLabel = new templateLabel(
-          'Press SPACE to back to the menu.', 205, 500
+          'Press ENTER to back to the menu.', 205, 500
         );
         pressLabel.width = 500;
 
@@ -825,7 +825,7 @@ window.onload = function() {
         core.replaceScene(this);
         // GameOverSceneのループ処理
         this.on('enterframe', function() {
-          if (core.input.space) {
+          if (core.input.enter) {
             if (!pre) {
               removeAllChild(this);
               let gameStartScene = new GameStartScene();
