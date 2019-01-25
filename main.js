@@ -97,6 +97,7 @@ window.onload = function() {
               if (core.input.enter){
                 if (!pre){
                   pre = true
+                  scene.bgm.play();
                   core.popScene();
                 }
               } else{
@@ -734,19 +735,19 @@ window.onload = function() {
         const quitKeyLabel = new templateLabel('やめる：Q', 540, 560);
         this.addChild(quitKeyLabel);
 
+        this.bgm.play();
 
         core.replaceScene(this);
         // GamePlaySceneのループ処理
         let pre = true;
         this.on('enterframe', function() {
-          this.bgm.play();
           //ポーズ
           if (core.input.enter){
             if (!pre){
               pre = true;
               // 手前に表示するため毎回作成
               this.bgm.pause();
-              let pauseScene = new PauseScene();
+              let pauseScene = new PauseScene(this);
             }
           } else{
             pre = false;
