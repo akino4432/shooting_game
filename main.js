@@ -733,13 +733,15 @@ window.onload = function() {
         this.addChild(pauseKeyLabel);
         const quitKeyLabel = new templateLabel('やめる：Q', 540, 560);
         this.addChild(quitKeyLabel);
+        
+        this.bgm.play();
 
 
         core.replaceScene(this);
         // GamePlaySceneのループ処理
         let pre = true;
         this.on('enterframe', function() {
-          this.bgm.play();
+
           //ポーズ
           if (core.input.enter){
             if (!pre){
